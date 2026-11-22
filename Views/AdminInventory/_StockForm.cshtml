@@ -1,0 +1,14 @@
+@model (int ProductId, int? VariantId, string? Q)
+<form class="ac" method="post" action="/admin/stok/guncelle" asp-antiforgery="true">
+    <input type="hidden" name="ProductId" value="@Model.ProductId" />
+    @if (Model.VariantId != null) { <input type="hidden" name="VariantId" value="@Model.VariantId" /> }
+    <input type="hidden" name="returnQ" value="@Model.Q" />
+    <select class="inp" name="Mode" style="width:auto;padding:7px" aria-label="İşlem türü">
+        <option value="increase">Giriş (+)</option>
+        <option value="decrease">Çıkış (−)</option>
+        <option value="set">Düzelt (=)</option>
+    </select>
+    <input class="inp" type="number" name="Amount" min="0" required style="width:96px;padding:7px" aria-label="Miktar" />
+    <input class="inp" type="text" name="Reason" maxlength="300" placeholder="Not (isteğe bağlı)" style="width:170px;padding:7px" aria-label="Not" />
+    <button class="sbtn" type="submit">Uygula</button>
+</form>

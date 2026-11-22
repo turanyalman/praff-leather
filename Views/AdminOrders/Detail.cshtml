@@ -1,0 +1,98 @@
+@model Order
+<div class="tb">
+    <div><div class="eb"><a href="/admin/siparisler">Siparişler</a> ›</div><h1>Sipariş #@Model.OrderNumber</h1></div>
+    <div class="ac"><span class="badge @Fmt.StatusCss(Model.Status)">@Fmt.StatusText(Model.Status)</span><span class="badge @(Model.PaymentStatus == PaymentStatus.Paid ? "b-ok" : "b-wait")">@Fmt.PaymentText(Model.PaymentStatus)</span></div>
+</div>
+<div class="g2">
+    <div style="display:grid;gap:24px">
+        <section class="cd">
+            <h2>Ürünler</h2>
+            <div class="ov"><table>
+                <thead><tr><th>Ürün</th><th>Renk</th><th class="r">Birim</th><th class="r">Adet</th><th class="r">Tutar</th></tr></thead>
+                <tbody>
+                @foreach (var i in Model.Items)
+                {
+                    <tr>
+                        <td>@if (i.ProductId != null) { <a class="gold" href="/admin/urunler/@i.ProductId">@i.ProductName</a> } else { @i.ProductName <small class="mut">(silinmiş ürün)</small> }<br /><small class="mut">@i.Sku</small></td>
+                        <td>@(string.IsNullOrEmpty(i.ColorName) ? "—" : i.ColorName)</td>
+                        <td class="r">@Fmt.Money(i.UnitPrice)</td>
+                        <td class="r">@Fmt.Number(i.Quantity)</td>
+                        <td class="r">@Fmt.Money(i.LineTotal)</td>
+                    </tr>
+                }
+                <tr><td colspan="4" class="r mut">Ara Toplam</td><td class="r">@Fmt.Money(Model.Subtotal)</td></tr>
+                <tr><td colspan="4" class="r mut">Kargo</td><td class="r">@Fmt.Money(Model.ShippingCost)</td></tr>
+                <tr><td colspan="4" class="r"><b>Genel Toplam</b></td><td class="r"><strong style="font-size:22px">@Fmt.Money(Model.Total)</strong></td></tr>
+                </tbody>
+            </table></div>
+            <p class="mut" style="font-size:13px;margin:12px 0 0">Fiyatlar sipariş anındaki değerlerdir; ürün fiyatı sonradan değişse de bu kayıt değişmez.</p>
+        </section>
+        <section class="cd">
+            <h2>Müşteri ve Teslimat</h2>
+            <dl class="kv">
+                <dt>Ad Soyad</dt><dd>@Model.FullName</dd>
+                <dt>E-posta</dt><dd><a class="gold" href="mailto:@Model.Email">@Model.Email</a></dd>
+                <dt>Telefon</dt><dd><a class="gold" href="tel:@Model.Phone.Replace(" ", "")">@Model.Phone</a></dd>
+                @if (!string.IsNullOrEmpty(Model.CompanyName)) { <dt>Firma</dt><dd>@Model.CompanyName</dd> }
+                @if (!string.IsNullOrEmpty(Model.TaxNumber)) { <dt>Vergi No</dt><dd>@Model.TaxNumber</dd> }
+                <dt>Adres</dt><dd>@Model.AddressLine<br />@Model.District / @Model.City @Model.PostalCode</dd>
+                <dt>Müşteri Notu</dt><dd>@(Model.Notes ?? "—")</dd>
+                <dt>Hesap</dt><dd>@if (Model.User != null) { <a class="gold" href="/admin/musteriler/@Model.UserId">@Model.User.FullName (@Model.User.Email)</a> } else { <text>—</text> }</dd>
+                <dt>Ödeme Yöntemi</dt><dd>@Model.PaymentMethod</dd>
+                <dt>Oluşturma</dt><dd>@Fmt.DateTimeText(Model.CreatedAt)</dd>
+            </dl>
+        </section>
+    </div>
+    <div style="display:grid;gap:24px">
+        <section class="cd">
+            <h2>Sipariş Durumu</h2>
+            @{ var next = OrderService.NextStatuses(Model.Status).ToList(); }
+            @if (Model.Status == OrderStatus.Cancelled)
+            {
+                <p class="mut" style="margin:0">Bu sipariş iptal edildi ve stoklar iade edildi. İptal edilen sipariş yeniden açılamaz.</p>
+            }
+            else if (next.Count == 0)
+            {
+                <p class="mut" style="margin:0">Sipariş teslim edildi; durum artık değiştirilemez.</p>
+            }
+            else
+            {
+                <form class="fm" method="post" action="/admin/siparisler/@Model.Id/durum" asp-antiforgery="true" data-confirm-cancel>
+                    <label>Yeni Durum
+                        <select name="status">
+                            @foreach (var s in next) { <option value="@s">@Fmt.StatusText(s)</option> }
+                        </select>
+                    </label>
+                    <label>Not (isteğe bağlı, müşteri görür ve e-postada yer alır)<input name="note" maxlength="500" placeholder="Örn. Kargo takip no: ..." /></label>
+                    <span class="hint mut" style="font-size:12px">Müşteriye durum e-postası gider. “İptal Edildi” seçilirse stoklar otomatik iade edilir; ödenmiş siparişte ödeme “İade Edildi” olur. Kargoya verilen sipariş iptal edilemez, durum geriye alınamaz.</span>
+                    <button class="gb" type="submit">Durumu Güncelle</button>
+                </form>
+            }
+        </section>
+        <section class="cd">
+            <h2>Ödeme</h2>
+            <form class="fm" method="post" action="/admin/siparisler/@Model.Id/odeme" asp-antiforgery="true">
+                <select name="payment" aria-label="Ödeme durumu">
+                    @foreach (var p in Enum.GetValues<PaymentStatus>()) { <option value="@p" selected="@(p == Model.PaymentStatus)">@Fmt.PaymentText(p)</option> }
+                </select>
+                <button class="lb2" type="submit">Ödeme Durumunu Kaydet</button>
+            </form>
+        </section>
+        <section class="cd">
+            <h2>Yönetici Notu</h2>
+            <form class="fm" method="post" action="/admin/siparisler/@Model.Id/not" asp-antiforgery="true">
+                <textarea name="adminNote" rows="3" maxlength="1000" aria-label="Yönetici notu" placeholder="Yalnızca yöneticiler görür">@Model.AdminNote</textarea>
+                <button class="lb2" type="submit">Notu Kaydet</button>
+            </form>
+        </section>
+        <section class="cd">
+            <h2>Geçmiş</h2>
+            <ul class="tl">
+                @foreach (var h in Model.StatusHistory.OrderByDescending(h => h.CreatedAt))
+                {
+                    <li><div><b>@Fmt.StatusText(h.Status)</b> <small class="mut">· @Fmt.DateTimeText(h.CreatedAt) · @h.ChangedBy</small>@if (!string.IsNullOrEmpty(h.Note)) { <br /><small class="mut">@h.Note</small> }</div></li>
+                }
+            </ul>
+        </section>
+    </div>
+</div>

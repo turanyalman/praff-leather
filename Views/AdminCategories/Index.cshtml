@@ -1,0 +1,59 @@
+@model CategoriesViewModel
+@{ var f = Model.Form; }
+<div class="tb"><div><div class="eb">Yönetim Paneli</div><h1>Kategoriler</h1></div><a class="gb" href="/admin/kategoriler">+ Yeni Kategori</a></div>
+<div class="g2">
+    <section class="cd">
+        <h2>Kategori Listesi</h2>
+        <p class="mut" style="margin:-8px 0 16px">Sıralamayı oklarla değiştirin. Sitedeki kategori kutuları bu sırayla görünür.</p>
+        @if (Model.Rows.Count == 0)
+        {
+            <div class="em">Henüz kategori yok. Sağdaki formdan ilk kategoriyi oluşturun.</div>
+        }
+        else
+        {
+            <div class="ov"><table>
+                <thead><tr><th>Sıra</th><th>Görsel</th><th>Ad</th><th>Ürün</th><th>Durum</th><th>İşlem</th></tr></thead>
+                <tbody>
+                @for (var i = 0; i < Model.Rows.Count; i++)
+                {
+                    var (c, n) = Model.Rows[i];
+                    <tr class="@(c.IsActive ? null : "off")">
+                        <td class="ac">
+                            <form method="post" action="/admin/kategoriler/@c.Id/tasi?dir=yukari" asp-antiforgery="true"><button class="sbtn" type="submit" aria-label="Yukarı taşı" disabled="@(i == 0)">↑</button></form>
+                            <form method="post" action="/admin/kategoriler/@c.Id/tasi?dir=asagi" asp-antiforgery="true"><button class="sbtn" type="submit" aria-label="Aşağı taşı" disabled="@(i == Model.Rows.Count - 1)">↓</button></form>
+                        </td>
+                        <td>@if (c.ImageUrl != null) { <img src="@c.ImageUrl" alt="" /> } else { <div class="ph"><img src="/images/brand/praff-monogram-champagne.png" alt="" /></div> }</td>
+                        <td><a class="gold" href="/admin/kategoriler?id=@c.Id">@c.Name</a><br /><small class="mut">/@c.Slug</small></td>
+                        <td><a href="/admin/urunler?kategori=@c.Id">@n</a></td>
+                        <td>
+                            <form method="post" action="/admin/kategoriler/@c.Id/durum" asp-antiforgery="true"><button class="sbtn" type="submit">@(c.IsActive ? "Aktif" : "Pasif")</button></form>
+                        </td>
+                        <td class="ac">
+                            <a class="sbtn" href="/admin/kategoriler?id=@c.Id">Düzenle</a>
+                            <form method="post" action="/admin/kategoriler/@c.Id/sil" asp-antiforgery="true" data-confirm="“@c.Name” kategorisi silinsin mi?"><button class="sbtn dl" type="submit" disabled="@(n > 0)" title="@(n > 0 ? "İçinde ürün olan kategori silinemez" : "Sil")">Sil</button></form>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table></div>
+        }
+    </section>
+    <section class="cd">
+        <h2>@(f.Id == 0 ? "Yeni Kategori" : "Kategori Düzenle")</h2>
+        <form class="fm" method="post" action="/admin/kategoriler/kaydet" enctype="multipart/form-data" asp-antiforgery="true" novalidate>
+            <input type="hidden" asp-for="Form.Id" />
+            <div class="val-sum" asp-validation-summary="ModelOnly"></div>
+            <label>Ad<input asp-for="Form.Name" maxlength="120" /><span class="err" asp-validation-for="Form.Name"></span></label>
+            <label>Adres (slug)<input asp-for="Form.Slug" maxlength="140" placeholder="Boş bırakılırsa addan üretilir" /><span class="err" asp-validation-for="Form.Slug"></span></label>
+            <label>Açıklama<textarea asp-for="Form.Description" rows="3" maxlength="1000"></textarea></label>
+            @if (!string.IsNullOrEmpty(f.ImageUrl))
+            {
+                <div style="display:flex;gap:12px;align-items:center"><img src="@f.ImageUrl" alt="" style="width:72px;height:72px;object-fit:cover" /><label class="ck"><input asp-for="Form.RemoveImage" type="checkbox" /> Görseli kaldır</label></div>
+            }
+            <label>Görsel<input asp-for="Form.Image" type="file" accept="image/jpeg,image/png,image/webp" /><span class="hint">JPG, PNG veya WEBP · en fazla 5 MB. Görsel yoksa kategorideki ilk ürün görseli kullanılır.</span><span class="err" asp-validation-for="Form.Image"></span></label>
+            <label class="ck"><input asp-for="Form.IsActive" type="checkbox" /> Sitede göster</label>
+            <button class="gb" type="submit">Kaydet</button>
+            @if (f.Id != 0) { <a class="mut" href="/admin/kategoriler" style="font-size:13px">Vazgeç / yeni kategori</a> }
+        </form>
+    </section>
+</div>

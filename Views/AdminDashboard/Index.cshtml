@@ -1,0 +1,147 @@
+@model DashboardViewModel
+@{
+    var max = Model.Daily.Count == 0 ? 0 : Model.Daily.Max(d => d.Total);
+    var monthDiff = Model.PrevMonth.Total == 0 ? (decimal?)null : (Model.Month.Total - Model.PrevMonth.Total) / Model.PrevMonth.Total * 100;
+    var totalOrdersForBar = Math.Max(1, Model.StatusCounts.Values.Sum());
+    var nowTr = Fmt.Local(DateTime.UtcNow);
+}
+<div class="tb">
+    <div><div class="eb">Yönetim Paneli · @nowTr.ToString("dd.MM.yyyy dddd", Fmt.Tr)</div><h1>Dashboard</h1></div>
+    <div class="ac"><a class="lb2" href="/admin/notlar">+ Not</a><a class="gb" href="/admin/urunler/yeni">+ Yeni Ürün</a></div>
+</div>
+
+@if (Model.PendingApprovals > 0)
+{
+    <a class="alert" href="/admin/musteriler?durum=onay">
+        <b>@Model.PendingApprovals müşteri onay bekliyor</b>
+        <span>Onaylanana kadar ürün ve fiyatları göremezler. İncelemek için tıklayın →</span>
+    </a>
+}
+
+<section class="st" aria-label="Satış özeti">
+    <div class="cd"><small class="k">Bugün</small><strong>@Fmt.Money(Model.Today.Total)</strong><div class="sub">@Model.Today.Count sipariş</div></div>
+    <div class="cd"><small class="k">Bu Hafta</small><strong>@Fmt.Money(Model.Week.Total)</strong><div class="sub">@Model.Week.Count sipariş</div></div>
+    <div class="cd"><small class="k">Bu Ay</small><strong>@Fmt.Money(Model.Month.Total)</strong>
+        <div class="sub">@Model.Month.Count sipariş
+            @if (monthDiff != null) { <span class="@(monthDiff >= 0 ? "up" : "down")">· geçen aya göre @(monthDiff >= 0 ? "▲" : "▼") %@Math.Abs(monthDiff.Value).ToString("0", Fmt.Tr)</span> }
+        </div></div>
+    <div class="cd"><small class="k">Toplam Satış</small><strong>@Fmt.Money(Model.TotalSales)</strong><div class="sub">İptaller hariç · Ödenen @Fmt.Money(Model.PaidSales)</div></div>
+</section>
+
+<section class="st" aria-label="Genel özet">
+    <div class="cd"><small class="k">Ortalama Sipariş</small><strong>@Fmt.Money(Model.AverageOrder)</strong></div>
+    <div class="cd"><small class="k">Ödeme Bekleyen</small><strong>@Fmt.Money(Model.AwaitingPayment.Total)</strong><div class="sub">@Model.AwaitingPayment.Count sipariş</div></div>
+    <div class="cd"><small class="k">Müşteri</small><strong>@Fmt.Number(Model.TotalCustomers)</strong><div class="sub">@Model.ApprovedCustomers onaylı · bu ay +@Model.NewCustomersMonth</div></div>
+    <div class="cd"><small class="k">Ürün</small><strong>@Fmt.Number(Model.TotalProducts)</strong><div class="sub">@Model.ActiveProducts aktif · @Model.OutOfStock tükenmiş</div></div>
+    <div class="cd"><small class="k">Stok Değeri</small><strong>@Fmt.Money(Model.InventoryValue)</strong><div class="sub">@Fmt.Number(Model.TotalStockUnits) adet · toptan fiyatla</div></div>
+    <div class="cd"><small class="k">Okunmamış Mesaj</small><strong>@Model.UnreadMessages</strong><div class="sub"><a class="gold" href="/admin/mesajlar">Mesajlar →</a></div></div>
+</section>
+
+<div class="g2">
+    <section class="cd" aria-labelledby="chart-h">
+        <h2 id="chart-h">Son 14 Gün Satış</h2>
+        @if (max <= 0)
+        {
+            <div class="em">Son 14 günde sipariş yok.</div>
+        }
+        else
+        {
+            <div class="bars" role="img" aria-label="Son 14 günün günlük satış tutarları">
+                @foreach (var d in Model.Daily)
+                {
+                    var h = d.Total <= 0 ? 0 : Math.Max(4, (int)(d.Total / max * 100));
+                    <div title="@d.Day.ToString("dd.MM.yyyy"): @Fmt.Money(d.Total) (@d.Count sipariş)"><i style="height:@(h)%"></i><small>@d.Day.ToString("dd.MM")</small></div>
+                }
+            </div>
+        }
+    </section>
+    <section class="cd">
+        <h2>Sipariş Durumları</h2>
+        <div class="sbars">
+            @foreach (var st in Enum.GetValues<OrderStatus>())
+            {
+                var n = Model.StatusCounts.GetValueOrDefault(st);
+                <a class="sb-row" href="/admin/siparisler?durum=@st">
+                    <span>@Fmt.StatusText(st)</span>
+                    <i><b class="@Fmt.StatusCss(st)" style="width:@(n * 100 / totalOrdersForBar)%"></b></i>
+                    <em>@n</em>
+                </a>
+            }
+        </div>
+    </section>
+</div>
+
+<div class="g2">
+    <section class="cd">
+        <div class="hrow"><h2>Son Siparişler</h2><a class="gold" href="/admin/siparisler">Tümü →</a></div>
+        @if (Model.RecentOrders.Count == 0)
+        {
+            <div class="em">Henüz sipariş yok. İlk sipariş geldiğinde burada görünecek.</div>
+        }
+        else
+        {
+            <div class="ov"><table>
+                <thead><tr><th>No</th><th>Müşteri</th><th>Tarih</th><th>Durum</th><th class="r">Tutar</th></tr></thead>
+                <tbody>
+                @foreach (var o in Model.RecentOrders)
+                {
+                    <tr>
+                        <td><a class="gold" href="/admin/siparisler/@o.Id">#@o.OrderNumber</a></td>
+                        <td>@o.FullName@if (!string.IsNullOrEmpty(o.CompanyName)) { <br /><small class="mut">@o.CompanyName</small> }</td>
+                        <td>@Fmt.DateTimeText(o.CreatedAt)</td>
+                        <td><span class="badge @Fmt.StatusCss(o.Status)">@Fmt.StatusText(o.Status)</span></td>
+                        <td class="r">@Fmt.Money(o.Total)</td>
+                    </tr>
+                }
+                </tbody>
+            </table></div>
+        }
+    </section>
+    <section class="cd">
+        <div class="hrow"><h2>Onay Bekleyen Müşteriler</h2><a class="gold" href="/admin/musteriler?durum=onay">Tümü →</a></div>
+        @if (Model.PendingCustomers.Count == 0)
+        {
+            <div class="em">Onay bekleyen başvuru yok.</div>
+        }
+        @foreach (var u in Model.PendingCustomers)
+        {
+            <a class="li" href="/admin/musteriler/@u.Id"><span><b>@(u.CompanyName ?? u.FullName)</b><small>@u.FullName@(string.IsNullOrEmpty(u.City) ? "" : " · " + u.City)</small></span><small>@Fmt.Date(u.CreatedAt)</small></a>
+        }
+    </section>
+</div>
+
+<div class="g3a">
+    <section class="cd">
+        <h2>En Çok Satanlar</h2>
+        @if (Model.TopProducts.Count == 0) { <div class="em">Henüz satış yok.</div> }
+        @for (var i = 0; i < Model.TopProducts.Count; i++)
+        {
+            var t = Model.TopProducts[i];
+            <div class="li"><span><b>@(i + 1). @t.Name</b><small>@t.Sku · @Fmt.Money(t.Revenue)</small></span><strong class="gold">@Fmt.Number(t.Qty) ad.</strong></div>
+        }
+    </section>
+    <section class="cd">
+        <div class="hrow"><h2>Kritik Stok</h2><a class="gold" href="/admin/stok?filtre=kritik">Stok →</a></div>
+        @if (Model.Critical.Count == 0) { <div class="em">Kritik seviyenin altında ürün yok.</div> }
+        @foreach (var (p, variant, qty) in Model.Critical)
+        {
+            <a class="li" href="/admin/stok?q=@p.Sku"><span><b>@p.Name@(variant == null ? "" : " — " + variant)</b><small>@p.Sku · kritik seviye @p.CriticalStockLevel</small></span><span class="badge @(qty == 0 ? "b-err" : "b-wait")">@Fmt.Number(qty)</span></a>
+        }
+    </section>
+    <section class="cd">
+        <div class="hrow"><h2>Notlar</h2><a class="gold" href="/admin/notlar">Tümü →</a></div>
+        @if (Model.PinnedNotes.Count == 0) { <div class="em">Sabitlenmiş not yok. <a class="gold" href="/admin/notlar">Not ekleyin →</a></div> }
+        @foreach (var n in Model.PinnedNotes)
+        {
+            <a class="li note-li n-@n.Color" href="/admin/notlar#not-@n.Id"><span><b>@(n.Title ?? "Not")</b><small>@(n.Content.Length > 90 ? n.Content[..90] + "…" : n.Content)</small></span></a>
+        }
+        @if (Model.RecentMessages.Count > 0)
+        {
+            <h2 style="margin-top:20px">Yeni Mesajlar</h2>
+            @foreach (var m in Model.RecentMessages)
+            {
+                <a class="li" href="/admin/mesajlar"><span><b>@m.Subject</b><small>@m.FullName · @Fmt.DateTimeText(m.CreatedAt)</small></span></a>
+            }
+        }
+    </section>
+</div>

@@ -1,0 +1,35 @@
+@model List<Order>
+<div class="acc">
+    <div class="aw">
+        <partial name="_Side" />
+        <div>
+            <h1>Siparişlerim</h1>
+            <p class="sub">Tüm toptan siparişleriniz ve güncel durumları.</p>
+            @if (Model.Count == 0)
+            {
+                <div class="empty">@Icon.Box(56)<h2>Henüz siparişiniz yok</h2><p>Toptan ürünlerimizi inceleyerek ilk siparişinizi oluşturabilirsiniz.</p><a class="btn btn-gold" href="/urunler">Ürünleri İncele</a></div>
+            }
+            else
+            {
+                <div class="bx bxp ov">
+                    <table class="tbl">
+                        <thead><tr><th>Sipariş No</th><th>Tarih</th><th>Adet</th><th>Durum</th><th class="r">Tutar</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (var o in Model)
+                            {
+                                <tr>
+                                    <td><b>#@o.OrderNumber</b></td>
+                                    <td>@Fmt.Date(o.CreatedAt)</td>
+                                    <td>@Fmt.Number(o.Items.Sum(i => i.Quantity))</td>
+                                    <td><span class="badge @Fmt.StatusCss(o.Status)">@Fmt.StatusText(o.Status)</span></td>
+                                    <td class="r gold">@Fmt.Money(o.Total)</td>
+                                    <td class="r"><a class="sbtn" href="/hesap/siparisler/@o.OrderNumber">Detay</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

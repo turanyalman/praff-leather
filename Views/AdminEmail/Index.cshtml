@@ -1,0 +1,99 @@
+@model ComposeEmailForm
+@{
+    var configured = ViewData["Configured"] as bool? == true;
+    var bulk = ViewData["BulkCount"] as int? ?? 0;
+    var customers = (List<User>)ViewData["Customers"]!;
+    var log = (Paged<EmailLog>)ViewData["Log"]!;
+}
+<div class="tb">
+    <div><div class="eb">Yönetim Paneli</div><h1>E-posta</h1></div>
+    <span class="badge @(configured ? "b-ok" : "b-err")">@(configured ? "SMTP bağlı" : "SMTP ayarlanmadı")</span>
+</div>
+
+@if (!configured)
+{
+    <div class="flash f-err">E-posta sunucusu (SMTP) ayarlanmadığı için hiçbir e-posta gönderilmiyor (kayıt kodu, şifre sıfırlama, sipariş bildirimleri dahil). <b>appsettings.Production.json</b> içindeki <b>Smtp</b> bölümünü Plesk’teki posta kutusu bilgileriyle doldurun.</div>
+}
+
+<div class="g2">
+    <section class="cd">
+        <h2>Yeni E-posta</h2>
+        <form class="fm" method="post" action="/admin/eposta/gonder" asp-antiforgery="true" novalidate data-compose>
+            <div class="val-sum" asp-validation-summary="All"></div>
+            <input type="hidden" asp-for="UserId" />
+            <div class="lab">Alıcı</div>
+            <label class="ck"><input type="radio" name="Mode" value="tek" checked="@(Model.Mode != "onayli")" /> Tek alıcı</label>
+            <label class="ck"><input type="radio" name="Mode" value="onayli" checked="@(Model.Mode == "onayli")" /> Tüm onaylı müşteriler (@bulk kişi, e-postası doğrulanmış)</label>
+            <label>Alıcı e-posta adresi
+                <input asp-for="To" type="email" list="cust-list" placeholder="ornek@firma.com veya müşteri adı yazın" autocomplete="off" />
+                <datalist id="cust-list">
+                    @foreach (var c in customers) { <option value="@c.Email">@(c.CompanyName ?? c.FullName)</option> }
+                </datalist>
+                <span class="hint">Listeden müşteri seçebilir veya herhangi bir adres yazabilirsiniz.</span>
+            </label>
+            <label>Konu *<input asp-for="Subject" maxlength="160" /></label>
+            <label>Mesaj *<textarea asp-for="Message" rows="9" placeholder="Merhaba {ad},&#10;&#10;Yeni sezon koleksiyonumuz yayında..."></textarea>
+                <span class="hint">Düz metin yazın; boş satır yeni paragraf olur. <b>{ad}</b> yazdığınız yere müşterinin adı gelir. Mesaj PRAFF LEATHER şablonuyla gönderilir.</span>
+            </label>
+            <div class="row2">
+                <label>Düğme yazısı (isteğe bağlı)<input asp-for="ButtonText" maxlength="60" placeholder="Koleksiyonu İncele" /></label>
+                <label>Düğme bağlantısı<input asp-for="ButtonUrl" maxlength="300" placeholder="https://www.alanadi.com/urunler" /></label>
+            </div>
+            <button class="gb" type="submit" data-confirm-bulk="@bulk" disabled="@(!configured)">Gönder</button>
+        </form>
+    </section>
+
+    <div class="fm">
+        <section class="cd fm">
+            <h2>SMTP Testi</h2>
+            <form class="fm" method="post" action="/admin/eposta/test" asp-antiforgery="true">
+                <label>Test alıcısı<input name="to" type="email" placeholder="Boş bırakılırsa sizin adresiniz" /></label>
+                <button class="lb2" type="submit">Test E-postası Gönder</button>
+            </form>
+        </section>
+        <section class="cd">
+            <h2>Otomatik Gönderilenler</h2>
+            <ul class="tl">
+                <li>Kayıtta 6 haneli e-posta doğrulama kodu</li>
+                <li>Yeni başvuru ve yeni sipariş bildirimi (yöneticiye)</li>
+                <li>Hesap onaylandı (müşteriye)</li>
+                <li>Sipariş alındı + havale bilgileri, durum değişiklikleri</li>
+                <li>Şifre sıfırlama bağlantısı</li>
+            </ul>
+            <p class="hint mut" style="margin:12px 0 0;font-size:13px">Yönetici bildirimlerinin gideceği adres: Site Ayarları › “Bildirim E-postası”.</p>
+        </section>
+    </div>
+</div>
+
+<section class="cd">
+    <div class="hrow"><h2>Gönderim Kaydı</h2><span class="mut" style="font-size:13px">@Fmt.Number(log.Total) kayıt</span></div>
+    @if (log.Items.Count == 0) { <div class="em">Henüz e-posta gönderilmedi.</div> }
+    else
+    {
+        <div class="ov"><table>
+            <thead><tr><th>Tarih</th><th>Alıcı</th><th>Konu</th><th>Tür</th><th>Durum</th><th>Gönderen</th></tr></thead>
+            <tbody>
+            @foreach (var l in log.Items)
+            {
+                <tr>
+                    <td>@Fmt.DateTimeText(l.CreatedAt)</td>
+                    <td>@if (l.UserId != null) { <a class="gold" href="/admin/musteriler/@l.UserId">@l.ToEmail</a> } else { @l.ToEmail }</td>
+                    <td><a href="/admin/eposta/kayit/@l.Id">@l.Subject</a></td>
+                    <td class="mut">@l.Category</td>
+                    <td>@if (l.Success) { <span class="badge b-ok">Gönderildi</span> } else { <span class="badge b-err" title="@l.Error">Gönderilemedi</span> }</td>
+                    <td class="mut">@l.SentBy</td>
+                </tr>
+            }
+            </tbody>
+        </table></div>
+        @if (log.TotalPages > 1)
+        {
+            <nav class="pager" aria-label="Sayfalar">
+                @for (var i = 1; i <= Math.Min(log.TotalPages, 20); i++)
+                {
+                    if (i == log.Page) { <span class="on">@i</span> } else { <a href="/admin/eposta?sayfa=@i">@i</a> }
+                }
+            </nav>
+        }
+    }
+</section>

@@ -1,0 +1,44 @@
+@model AdminCreateForm
+@{
+    var admins = (List<Admin>)ViewData["Admins"]!;
+    var meId = User.UserId();
+}
+<div class="tb"><div><div class="eb">Yönetim Paneli</div><h1>Yöneticiler</h1></div></div>
+<div class="g2">
+    <section class="cd">
+        <h2>Yönetici Hesapları</h2>
+        <div class="ov"><table>
+            <thead><tr><th>Ad Soyad</th><th>E-posta</th><th>Eklenme</th><th>Son Giriş</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var a in admins)
+            {
+                <tr>
+                    <td>@a.FullName @if (a.Id == meId) { <span class="badge b-gold">Siz</span> }</td>
+                    <td>@a.Email</td>
+                    <td>@Fmt.Date(a.CreatedAt)</td>
+                    <td>@(a.LastLoginAt == null ? "—" : Fmt.DateTimeText(a.LastLoginAt.Value))</td>
+                    <td>
+                        @if (a.Id != meId && admins.Count > 1)
+                        {
+                            <form class="ac" method="post" action="/admin/yoneticiler/@a.Id/sil" asp-antiforgery="true" data-confirm="@a.Email yönetici hesabı silinsin mi?">
+                                <input class="inp" type="password" name="currentPassword" placeholder="Şifreniz" required autocomplete="current-password" style="width:140px;padding:7px" aria-label="Onay için mevcut şifreniz" />
+                                <button class="sbtn dl" type="submit">Sil</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table></div>
+    </section>
+    <section class="cd">
+        <h2>Yeni Yönetici</h2>
+        <form class="fm" method="post" action="/admin/yoneticiler/ekle" asp-antiforgery="true" autocomplete="off">
+            <label>Ad Soyad *<input asp-for="FullName" maxlength="120" /></label>
+            <label>E-posta *<input asp-for="Email" type="email" maxlength="160" autocomplete="off" /></label>
+            <label>Şifre *<input asp-for="Password" type="password" autocomplete="new-password" /><span class="hint">En az 10 karakter; büyük harf, küçük harf ve rakam.</span></label>
+            <label>Onay için mevcut şifreniz *<input asp-for="CurrentPassword" type="password" autocomplete="current-password" /></label>
+            <button class="gb" type="submit">Yönetici Ekle</button>
+        </form>
+    </section>
+</div>

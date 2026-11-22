@@ -1,0 +1,25 @@
+@model LoginForm
+<div class="uy">
+    <form class="cd" method="post" action="/hesap/giris" asp-antiforgery="true" novalidate aria-label="Giriş">
+        <div class="lg"><b>PRAFF</b><span>LEATHER</span></div>
+        <h1>Giriş Yap</h1>
+        <p class="sb">Müşteri veya yönetici hesabınızla giriş yapın.</p>
+        <div class="val-sum fgrp" asp-validation-summary="ModelOnly"></div>
+        <input type="hidden" asp-for="ReturnUrl" />
+        <div class="fgrp">
+            <label class="fl2">@Icon.Mail()<input asp-for="Email" type="email" placeholder="E-posta adresiniz" aria-label="E-posta" autocomplete="email" required /></label>
+            <span class="err" asp-validation-for="Email"></span>
+        </div>
+        <div class="fgrp">
+            <label class="fl2">@Icon.Lock(20)<input asp-for="Password" type="password" placeholder="Şifreniz" aria-label="Şifre" autocomplete="current-password" required /><button type="button" aria-label="Şifreyi göster" data-toggle-pass>@Icon.Eye()</button></label>
+            <span class="err" asp-validation-for="Password"></span>
+        </div>
+        <div class="rw2"><label class="ck"><input asp-for="RememberMe" type="checkbox" />Beni hatırla</label><a href="/hesap/sifremi-unuttum">Şifremi unuttum?</a></div>
+        <button class="btn btn-grad btn-block" type="submit">Giriş Yap</button>
+        @if (string.IsNullOrEmpty(Model.ReturnUrl) || !Model.ReturnUrl.StartsWith("/admin"))
+        {
+            <div class="dv">Hesabınız yok mu?</div>
+            <a class="btn btn-line btn-block" style="border-radius:6px;text-transform:none;letter-spacing:0;font-size:16px;font-weight:500;color:var(--ivory)!important" href="/hesap/kayit">Toptan Müşteri Başvurusu</a>
+        }
+    </form>
+</div>

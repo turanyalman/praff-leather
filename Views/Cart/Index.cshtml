@@ -1,0 +1,98 @@
+@model CartView
+@{
+    var shipping = ViewData["Shipping"] as decimal? ?? 0;
+    var isCustomer = User.Identity?.IsAuthenticated == true && User.Identity.AuthenticationType == AuthSchemes.Customer;
+}
+<div class="sp">
+    <img class="bg" src="/images/model.jpg" alt="" />
+    <div class="pw">
+        <nav class="bc" aria-label="Konum"><a href="/" aria-label="Ana sayfa">@Icon.Home()</a> › <span class="gold">Sepetim</span></nav>
+        <div class="tt">
+            @Icon.Box(48)
+            <div><h1>Toptan Sepetim</h1><p>@(Model.IsEmpty ? "Sepetiniz boş." : $"Sepetinizde {Model.LineCount} ürün satırı, toplam {Fmt.Number(Model.TotalQuantity)} adet bulunuyor.")</p></div>
+        </div>
+
+        @if (Model.IsEmpty)
+        {
+            <div class="empty">
+                @Icon.Bag(56)
+                <h2>Sepetiniz boş</h2>
+                <p>Toptan ürünlerimizi inceleyip minimum sipariş adedinden itibaren sepetinize ekleyebilirsiniz.</p>
+                <a class="btn btn-gold" href="/urunler">Alışverişe Başla</a>
+            </div>
+        }
+        else
+        {
+            <div class="cgr">
+                <div>
+                    @if (Model.HasProblems)
+                    {
+                        <div class="flash" style="padding:0;margin:0 0 16px"><div class="f-err">Sepetinizde düzeltilmesi gereken satırlar var. Siparişi tamamlamadan önce işaretli satırları güncelleyin.</div></div>
+                    }
+                    <div class="tb">
+                        <div class="cth"><span>Ürün</span><span>Birim Fiyat</span><span>Adet</span><span>Toplam</span><span></span></div>
+                        @foreach (var l in Model.Lines)
+                        {
+                            <div class="crw @(l.Problem != null ? "bad" : null)">
+                                <div class="pd">
+                                    <a class="im" href="/urun/@l.Slug">
+                                        @if (l.ImageUrl != null) { <img src="@l.ImageUrl" alt="@l.Name" /> }
+                                        else { <img class="mono" src="/images/brand/praff-monogram-champagne.png" alt="" /> }
+                                    </a>
+                                    <div class="nm">
+                                        <b><a href="/urun/@l.Slug">@l.Name</a></b>
+                                        <small>Ürün Kodu: @l.Sku</small>
+                                        @if (!string.IsNullOrEmpty(l.ColorName)) { <small>Renk: @l.ColorName</small> }
+                                        @if (l.Problem != null) { <span class="err">@l.Problem</span> }
+                                    </div>
+                                </div>
+                                <div class="up2">@Fmt.Money(l.UnitPrice)</div>
+                                <div class="cq">
+                                    <form method="post" action="/sepet/guncelle" asp-antiforgery="true" data-qty-form>
+                                        <input type="hidden" name="itemId" value="@l.ItemId" />
+                                        <div class="qb">
+                                            <button type="button" aria-label="Azalt" data-step="-1">−</button>
+                                            <input type="number" name="quantity" value="@l.Quantity" min="1" max="@Math.Max(l.Stock, 1)" inputmode="numeric" aria-label="@l.Name adet" />
+                                            <button type="button" aria-label="Artır" data-step="1">+</button>
+                                        </div>
+                                        <noscript><button class="sbtn" type="submit">Güncelle</button></noscript>
+                                    </form>
+                                    <div class="mm">Min. @Fmt.Number(l.MinOrder) · Stok @Fmt.Number(l.Stock)</div>
+                                </div>
+                                <div class="ltot">@Fmt.Money(l.LineTotal)</div>
+                                <form method="post" action="/sepet/sil" asp-antiforgery="true">
+                                    <input type="hidden" name="itemId" value="@l.ItemId" />
+                                    <button class="dl" type="submit" aria-label="@l.Name ürününü sepetten sil">@Icon.Trash()</button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                    <div class="cac">
+                        <a href="/urunler">@Icon.Back() Alışverişe Devam Et</a>
+                        <form method="post" action="/sepet/temizle" asp-antiforgery="true" data-confirm="Sepetteki tüm ürünler silinecek. Emin misiniz?">
+                            <button type="submit">@Icon.Trash(20) Sepeti Temizle</button>
+                        </form>
+                    </div>
+                </div>
+                <aside class="sm" aria-label="Sipariş özeti">
+                    <h2>Sipariş Özeti</h2>
+                    <div class="srow"><span>Ürün Satırı</span><span>@Model.LineCount</span></div>
+                    <div class="srow"><span>Toplam Adet</span><span>@Fmt.Number(Model.TotalQuantity)</span></div>
+                    <div class="srow l"><span>Ara Toplam</span><span>@Fmt.Money(Model.Subtotal)</span></div>
+                    <div class="srow"><span>Kargo</span><span>@(shipping > 0 ? Fmt.Money(shipping) : "Ücretsiz")</span></div>
+                    <div class="gt"><b>Genel Toplam</b><span>@Fmt.Money(Model.Subtotal + shipping)</span></div>
+                    @if (Model.HasProblems)
+                    {
+                        <button class="btn btn-grad btn-block" type="button" disabled>@Icon.Cart() Siparişi Tamamla</button>
+                        <div class="ex">Önce sepetteki uyarıları düzeltin.</div>
+                    }
+                    else
+                    {
+                        <a class="btn btn-grad btn-block" href="/odeme">@Icon.Cart() Siparişi Tamamla</a>
+                        <div class="ex">@(isCustomer ? "Fiyat ve stoklar sipariş anında yeniden kontrol edilir." : "Sipariş vermek için giriş yapmanız veya üye olmanız istenecek. Sepetiniz korunur.")</div>
+                    }
+                </aside>
+            </div>
+        }
+    </div>
+</div>

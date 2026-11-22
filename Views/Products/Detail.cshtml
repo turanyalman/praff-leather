@@ -1,0 +1,158 @@
+@model ProductDetailViewModel
+@{
+    var p = Model.Product;
+    var images = p.Images.OrderBy(i => i.SortOrder).ThenBy(i => i.Id).ToList();
+    var colors = p.Colors.OrderBy(c => c.SortOrder).ToList();
+    // Renkli ürünlerde ilk stoklu renk seçili gelir; stok renk bazında gösterilir.
+    var first = colors.FirstOrDefault(c => c.StockQuantity > 0) ?? colors.FirstOrDefault();
+    var shownStock = first?.StockQuantity ?? p.StockQuantity;
+    var canBuy = p.StockQuantity >= p.MinOrderQuantity;
+    var features = Fmt.Lines(p.Features).ToList();
+    var details = Fmt.Lines(p.Details).Select(l => { var i = l.IndexOf(':'); return i > 0 ? (l[..i].Trim(), l[(i + 1)..].Trim()) : ("", l); }).ToList();
+    ViewData["LowStock"] = Model.LowStock;
+}
+<nav class="crumb" aria-label="Konum">
+    <a href="/">Ana Sayfa</a> › <a href="/urunler">Ürünler</a> › <a href="/urunler?kategori=@p.Category!.Slug">@p.Category.Name</a> › <span class="gold">@p.Name</span>
+</nav>
+
+<div class="dw">
+    @if (images.Count > 1)
+    {
+        <div class="th" aria-label="Ürün görselleri">
+            @for (var i = 0; i < images.Count; i++)
+            {
+                <button class="@(i == 0 ? "on" : null)" type="button" aria-label="Görsel @(i + 1)" data-thumb="@images[i].Url">
+                    <img src="@images[i].Url" alt="" loading="lazy" />
+                </button>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="th" aria-hidden="true"></div>
+    }
+
+    <div class="mn">
+        @if (images.Count > 0)
+        {
+            <img src="@images[0].Url" alt="@(images[0].AltText ?? p.Name)" data-main-image />
+            <button class="zm" type="button" aria-label="Görseli büyüt" data-zoom>@Icon.Zoom()</button>
+        }
+        else
+        {
+            <span class="ph2"><img src="/images/brand/praff-monogram-champagne.png" alt="" />Fotoğraf eklenecek</span>
+        }
+    </div>
+
+    <section class="inf" aria-labelledby="p-name">
+        <div class="eb">@p.Category.Name</div>
+        <h1 id="p-name">@p.Name</h1>
+        <div class="mt">Ürün Kodu: @p.Sku &nbsp;|&nbsp; Toptan Satış@(p.PackSize is > 0 ? $" | Koli içi {p.PackSize} adet" : "")</div>
+        @if (!string.IsNullOrEmpty(p.ShortDescription))
+        {
+            <p class="ds">@p.ShortDescription</p>
+        }
+
+        <form method="post" action="/sepet/ekle" asp-antiforgery="true" data-ajax-cart data-product-form
+              data-price="@p.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-min="@p.MinOrderQuantity" data-max="@shownStock" data-incart="@Model.InCartQuantity"
+              data-incart-color="@(first == null ? null : Model.InCartByColor.GetValueOrDefault(first.Name).ToString())">
+            <input type="hidden" name="productId" value="@p.Id" />
+            <input type="hidden" name="returnUrl" value="/urun/@p.Slug" />
+            @if (colors.Count > 0)
+            {
+                <div class="rw">
+                    <b>Renk:</b>
+                    <div class="sw" role="radiogroup" aria-label="Renk seçimi">
+                        @foreach (var c in colors)
+                        {
+                            var on = c == first;
+                            <button class="@(on ? "on" : null)" type="button" role="radio" aria-checked="@(on ? "true" : "false")" aria-label="@c.Name" title="@c.Name@(c.StockQuantity <= 0 ? " (stokta yok)" : "")" style="background:@c.HexCode"
+                                    data-color="@c.Name" data-stock="@c.StockQuantity" data-stock-text="@Fmt.StockText(c.StockQuantity, Model.LowStock)" data-incart="@Model.InCartByColor.GetValueOrDefault(c.Name)"></button>
+                        }
+                        <span class="cn" data-color-name>@first!.Name</span>
+                    </div>
+                    <input type="hidden" name="color" value="@first.Name" />
+                </div>
+            }
+            <div class="rw"><b>Toptan Fiyat:</b><div class="pr">@Fmt.Money(p.Price)<small>/ Adet</small></div></div>
+            <div class="rw"><b>Stok:</b><span class="@(shownStock > 0 ? "ok" : "no")" data-stock-text>@Fmt.StockText(shownStock, Model.LowStock)</span></div>
+            <div class="rw"><b>Minimum Sipariş:</b><span>@Fmt.Number(p.MinOrderQuantity) adet</span></div>
+            @if (p.PackSize is > 0)
+            {
+                <div class="rw"><b>Koli İçi Adet:</b><span>@p.PackSize adet</span></div>
+            }
+            @if (canBuy)
+            {
+                <div class="rw">
+                    <b><label for="qty">Adet:</label></b>
+                    <div class="qt">
+                        <button type="button" aria-label="Azalt" data-step="-1">−</button>
+                        <input id="qty" type="number" name="quantity" inputmode="numeric" value="@p.MinOrderQuantity" min="1" max="@Math.Max(shownStock, 1)" step="1" required />
+                        <button type="button" aria-label="Artır" data-step="1">+</button>
+                    </div>
+                    @if (Model.InCartQuantity > 0)
+                    {
+                        <span class="qhint">Sepetinizde bu üründen @Fmt.Number(Model.InCartQuantity) adet var.</span>
+                    }
+                </div>
+                <div class="qerr" role="alert" data-qty-error></div>
+                <div class="tot"><span data-total-label>Toplam (@p.MinOrderQuantity adet × @Fmt.Money(p.Price))</span><b data-total>@Fmt.Money(p.Price * p.MinOrderQuantity)</b></div>
+                <button class="btn btn-grad add" type="submit">@Icon.Box() Toptan Sepete Ekle</button>
+            }
+            else
+            {
+                <div class="note">Bu ürünün stoğu minimum sipariş miktarının altında. Stok bilgisi için bizimle <a href="/#iletisim" class="gold">iletişime geçin</a>.</div>
+            }
+        </form>
+    </section>
+</div>
+
+<section class="tabs" data-tabs>
+    <div class="tn" role="tablist">
+        <button class="on" type="button" role="tab" aria-selected="true" aria-controls="tab-a" id="t-a">Ürün Açıklaması</button>
+        <button type="button" role="tab" aria-selected="false" aria-controls="tab-o" id="t-o">Ürün Özellikleri</button>
+        <button type="button" role="tab" aria-selected="false" aria-controls="tab-d" id="t-d">Ürün Detayları</button>
+    </div>
+    <div class="tc" role="tabpanel" id="tab-a" aria-labelledby="t-a">
+        @if (string.IsNullOrWhiteSpace(p.Description)) { <p class="mut">Açıklama yakında eklenecek.</p> }
+        else { foreach (var para in Fmt.Lines(p.Description)) { <p>@para</p> } }
+    </div>
+    <div class="tc" role="tabpanel" id="tab-o" aria-labelledby="t-o" hidden>
+        @if (features.Count == 0) { <p class="mut">Özellik bilgisi yakında eklenecek.</p> }
+        else { <ul>@foreach (var f in features) { <li>@f</li> }</ul> }
+    </div>
+    <div class="tc" role="tabpanel" id="tab-d" aria-labelledby="t-d" hidden>
+        <dl>
+            <dt>Ürün Kodu</dt><dd>@p.Sku</dd>
+            <dt>Kategori</dt><dd>@p.Category.Name</dd>
+            <dt>Minimum Sipariş</dt><dd>@Fmt.Number(p.MinOrderQuantity) adet</dd>
+            @if (p.PackSize is > 0) { <dt>Koli İçi Adet</dt><dd>@p.PackSize adet</dd> }
+            @if (colors.Count > 0) { <dt>Renkler</dt><dd>@string.Join(", ", colors.Select(c => c.Name))</dd> }
+            @foreach (var (k, v) in details)
+            {
+                <dt>@(string.IsNullOrEmpty(k) ? "Not" : k)</dt><dd>@v</dd>
+            }
+        </dl>
+    </div>
+</section>
+
+@if (Model.Related.Count > 0)
+{
+    <section class="rel" aria-labelledby="rel-h">
+        <div class="le">Koleksiyondan</div>
+        <h2 id="rel-h" style="margin-top:8px">Benzer Ürünler</h2>
+        <div class="lt" style="padding:0;background:none">
+            <div class="pgr">
+                @foreach (var r in Model.Related)
+                {
+                    <partial name="_ProductCard" model="r" view-data="ViewData" />
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<div class="lb" hidden data-lightbox role="dialog" aria-modal="true" aria-label="Büyütülmüş görsel">
+    <button type="button" aria-label="Kapat" data-lightbox-close>×</button>
+    <img src="" alt="@p.Name" />
+</div>

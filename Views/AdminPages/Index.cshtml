@@ -1,0 +1,51 @@
+@model List<ContentPage>
+<div class="tb">
+    <div><div class="eb">Site Ayarları ›</div><h1>Sayfalar ve Yasal Metinler</h1></div>
+    <a class="gb" href="/admin/sayfalar/yeni">+ Yeni Sayfa</a>
+</div>
+<p class="mut" style="margin:0">Footer’daki “Kurumsal ve Yasal” bağlantıları bu listeden otomatik gelir. Sıralamayı oklarla değiştirebilirsiniz. KVKK Aydınlatma Metni silinemez; formlardaki onay kutuları bu sayfaya bağlıdır.</p>
+<section class="cd">
+    <div class="ov"><table>
+        <thead><tr><th>Sıra</th><th>Başlık</th><th>Adres</th><th>Footer</th><th>Durum</th><th>Son Güncelleme</th><th></th></tr></thead>
+        <tbody>
+        @for (var i = 0; i < Model.Count; i++)
+        {
+            var p = Model[i];
+            <tr class="@(p.IsActive ? null : "off")">
+                <td>
+                    <div class="ac">
+                        <form method="post" action="/admin/sayfalar/@p.Id/tasi?dir=yukari" asp-antiforgery="true"><button class="sbtn" type="submit" aria-label="Yukarı taşı" disabled="@(i == 0)">↑</button></form>
+                        <form method="post" action="/admin/sayfalar/@p.Id/tasi?dir=asagi" asp-antiforgery="true"><button class="sbtn" type="submit" aria-label="Aşağı taşı" disabled="@(i == Model.Count - 1)">↓</button></form>
+                    </div>
+                </td>
+                <td><a class="gold" href="/admin/sayfalar/@p.Id">@p.Title</a>@if (p.IsSystem) { <span class="badge b-gold" style="margin-left:6px">Sistem</span> }</td>
+                <td><a class="mut" href="/sayfa/@p.Slug" target="_blank" rel="noopener">/sayfa/@p.Slug ↗</a></td>
+                <td>
+                    <form method="post" action="/admin/sayfalar/@p.Id/durum?alan=footer" asp-antiforgery="true">
+                        <button class="sbtn @(p.ShowInFooter ? "ok" : null)" type="submit">@(p.ShowInFooter ? "Gösteriliyor" : "Gizli")</button>
+                    </form>
+                </td>
+                <td>
+                    @if (p.IsSystem) { <span class="badge b-ok">Aktif</span> }
+                    else
+                    {
+                        <form method="post" action="/admin/sayfalar/@p.Id/durum?alan=aktif" asp-antiforgery="true">
+                            <button class="sbtn @(p.IsActive ? "ok" : null)" type="submit">@(p.IsActive ? "Aktif" : "Pasif")</button>
+                        </form>
+                    }
+                </td>
+                <td>@Fmt.DateTimeText(p.UpdatedAt)</td>
+                <td>
+                    <div class="ac">
+                        <a class="sbtn" href="/admin/sayfalar/@p.Id">Düzenle</a>
+                        @if (!p.IsSystem)
+                        {
+                            <form method="post" action="/admin/sayfalar/@p.Id/sil" asp-antiforgery="true" data-confirm="“@p.Title” sayfası silinsin mi? Bu işlem geri alınamaz."><button class="sbtn dl" type="submit">Sil</button></form>
+                        }
+                    </div>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table></div>
+</section>

@@ -1,0 +1,7 @@
+@model int
+<div class="errp">
+    <b>@Model</b>
+    <h1>@(Model == 404 ? "Sayfa bulunamadı" : Model == 403 ? "Erişim izniniz yok" : "Bir sorun oluştu")</h1>
+    <p>@(Model == 404 ? "Aradığınız sayfa taşınmış veya kaldırılmış olabilir." : "Lütfen biraz sonra tekrar deneyin.")</p>
+    <a class="btn btn-gold" href="/">Ana Sayfaya Dön</a>
+</div>

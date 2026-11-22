@@ -1,0 +1,84 @@
+@model CatalogViewModel
+@{
+    ViewData["LowStock"] = Model.LowStock;
+    var activeCat = Model.Categories.FirstOrDefault(c => c.Category.Slug == Model.CategorySlug);
+}
+<section class="lt page" aria-labelledby="cat-h">
+    <div class="lw">
+        <div class="lh">
+            <div>
+                <div class="le">PRAFF LEATHER</div>
+                <h1 id="cat-h">@(activeCat?.Category.Name ?? "Ürünler")</h1>
+                <p>@(activeCat?.Category.Description ?? "Tüm deri koleksiyonumuzu keşfedin. Fiyatlar toptan birim fiyatıdır.")</p>
+            </div>
+            <form class="sr" method="get" action="/urunler" role="search">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2A1B12" stroke-width="1.6" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+                <input type="search" name="q" value="@Model.Query" aria-label="Ürünlerde ara" placeholder="Ürün adı veya kodu ile ara..." maxlength="80" />
+                @if (!string.IsNullOrEmpty(Model.CategorySlug)) { <input type="hidden" name="kategori" value="@Model.CategorySlug" /> }
+                @if (Model.Sort != "yeni") { <input type="hidden" name="siralama" value="@Model.Sort" /> }
+                @if (Model.InStockOnly) { <input type="hidden" name="stok" value="1" /> }
+                <button type="submit">Ara</button>
+            </form>
+        </div>
+
+        <nav class="ch" aria-label="Kategoriler">
+            <a class="@(string.IsNullOrEmpty(Model.CategorySlug) ? "on" : null)" href="@Model.Url(category: null)">Tümü (@Model.AllCount)</a>
+            @foreach (var c in Model.Categories)
+            {
+                <a class="@(c.Category.Slug == Model.CategorySlug ? "on" : null)" href="@Model.Url(category: c.Category.Slug)">@c.Category.Name (@c.ProductCount)</a>
+            }
+        </nav>
+
+        <form class="tbr" method="get" action="/urunler" data-autosubmit>
+            @if (!string.IsNullOrEmpty(Model.Query)) { <input type="hidden" name="q" value="@Model.Query" /> }
+            @if (!string.IsNullOrEmpty(Model.CategorySlug)) { <input type="hidden" name="kategori" value="@Model.CategorySlug" /> }
+            <span>
+                @Model.TotalCount ürün bulundu
+                @if (!string.IsNullOrEmpty(Model.Query)) { <text> · “@Model.Query” için</text> <a href="@Model.Url(category: Model.CategorySlug)" style="text-decoration:underline;margin-left:6px">aramayı temizle</a> }
+            </span>
+            <div class="tr">
+                <label class="ck"><input type="checkbox" name="stok" value="1" checked="@Model.InStockOnly" /> Yalnızca stoktakiler</label>
+                <label for="srt">Sıralama:</label>
+                <select id="srt" name="siralama">
+                    <option value="yeni" selected="@(Model.Sort == "yeni")">En Yeniler</option>
+                    <option value="artan" selected="@(Model.Sort == "artan")">Fiyat: Artan</option>
+                    <option value="azalan" selected="@(Model.Sort == "azalan")">Fiyat: Azalan</option>
+                    <option value="ad" selected="@(Model.Sort == "ad")">Ada Göre (A–Z)</option>
+                </select>
+                <noscript><button type="submit" class="sbtn">Uygula</button></noscript>
+                <div class="vt" role="group" aria-label="Görünüm">
+                    <button class="on" type="button" aria-label="Izgara görünümü" aria-pressed="true" data-view="grid">@Icon.Grid()</button>
+                    <button type="button" aria-label="Liste görünümü" aria-pressed="false" data-view="list">@Icon.List()</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="pgr" data-grid>
+            @if (Model.Products.Count == 0)
+            {
+                <div class="empty-l">
+                    <h3>Aradığınız kriterlere uygun ürün bulunamadı</h3>
+                    <p>Filtreleri değiştirerek tekrar deneyin.</p>
+                    <p><a href="/urunler" style="text-decoration:underline">Tüm ürünleri göster</a></p>
+                </div>
+            }
+            @foreach (var p in Model.Products)
+            {
+                <partial name="_ProductCard" model="p" view-data="ViewData" />
+            }
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="pager" aria-label="Sayfalar">
+                @if (Model.Page > 1) { <a href="@Model.Url(Model.Page - 1)" aria-label="Önceki sayfa">‹</a> } else { <span class="dis">‹</span> }
+                @for (var i = 1; i <= Model.TotalPages; i++)
+                {
+                    if (i == Model.Page) { <span class="on" aria-current="page">@i</span> }
+                    else { <a href="@Model.Url(i)">@i</a> }
+                }
+                @if (Model.Page < Model.TotalPages) { <a href="@Model.Url(Model.Page + 1)" aria-label="Sonraki sayfa">›</a> } else { <span class="dis">›</span> }
+            </nav>
+        }
+    </div>
+</section>

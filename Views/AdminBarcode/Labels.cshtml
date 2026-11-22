@@ -1,0 +1,79 @@
+@model LabelPageViewModel
+@{
+    Layout = null;
+    var (w, h, sheet) = Model.Size switch
+    {
+        "40x25" => (40.0, 25.0, false),
+        "a4-3x8" => (70.0, 37.1, true),
+        _ => (50.0, 30.0, false)
+    };
+    var inv = System.Globalization.CultureInfo.InvariantCulture;
+    string mm(double v) => v.ToString("0.##", inv) + "mm";
+    var small = h < 28;
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Etiket Yazdır — PRAFF Yönetim</title>
+    <style>
+        @@page { size: @(sheet ? "A4" : $"{mm(w)} {mm(h)}"); margin: 0; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #000; background: #e9e4dc; }
+        .bar { position: sticky; top: 0; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px 16px; background: #0A0806; color: #F4EBDD; font-size: 14px; z-index: 2; }
+        .bar button, .bar a { background: #C99A4A; color: #0A0806; border: 0; padding: 10px 18px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 14px; }
+        .bar a.sec { background: none; color: #E8C98C; border: 1px solid #4A3822; }
+        .bar span { color: #B9AA98; }
+        .sheet { display: flex; flex-wrap: wrap; gap: 6mm; padding: 6mm; }
+        .lbl { width: @mm(w); height: @mm(h); background: #fff; padding: @(small ? "1.2mm 1.6mm" : "1.8mm 2.2mm"); display: flex; gap: 1.5mm; overflow: hidden; page-break-inside: avoid; break-inside: avoid; }
+        .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .brand { font-size: @(small ? "5.5pt" : "6.5pt"); letter-spacing: .18em; font-weight: bold; }
+        .nm { font-size: @(small ? "6.5pt" : "7.5pt"); line-height: 1.15; max-height: 2.3em; overflow: hidden; margin-top: .4mm; }
+        .meta { font-size: @(small ? "5.5pt" : "6.5pt"); display: flex; justify-content: space-between; gap: 2mm; margin-top: .3mm; }
+        .bc { flex: 1; min-height: 0; margin-top: .6mm; }
+        .bc svg { width: 100%; height: 100%; display: block; }
+        .qr { width: @mm(Math.Min(h - 4, w * .36)); flex: none; align-self: center; }
+        .qr svg { width: 100%; height: auto; display: block; }
+        .empty { padding: 40px 16px; font-size: 16px; }
+        @@media print {
+            body { background: #fff; }
+            .bar { display: none; }
+            .sheet { padding: 0; gap: 0; }
+            .lbl { @(sheet ? "" : "page-break-after: always; break-after: page;") }
+            @(sheet ? Html.Raw(".sheet{display:grid;grid-template-columns:repeat(3," + mm(w) + ");grid-auto-rows:" + mm(h) + "}") : Html.Raw(""))
+        }
+    </style>
+</head>
+<body>
+    <div class="bar">
+        <button type="button" data-print>Yazdır / PDF Kaydet</button>
+        <a class="sec" href="/admin/barkod">← Barkod &amp; QR</a>
+        <span>@Model.Labels.Count etiket · @(Model.Size == "a4-3x8" ? "A4 etiket kağıdı (3×8)" : Model.Size.Replace("x", " × ") + " mm")@(Model.Skipped > 0 ? $" · Barkodu olmayan {Model.Skipped} kalem atlandı" : "")</span>
+        <span>İpucu: yazdırma penceresinde “Kenar boşluğu: Yok” ve “Ölçek: %100” seçin.</span>
+    </div>
+    @if (Model.Labels.Count == 0)
+    {
+        <div class="empty">Yazdırılacak etiket yok. Önce ürünlere barkod oluşturun.</div>
+    }
+    <div class="sheet">
+        @foreach (var l in Model.Labels)
+        {
+            <div class="lbl">
+                <div class="main">
+                    <div class="brand">PRAFF LEATHER</div>
+                    @if (Model.ShowName) { <div class="nm">@l.Name@(l.VariantName == null ? "" : " — " + l.VariantName)</div> }
+                    @if (Model.ShowSku || Model.ShowPrice)
+                    {
+                        <div class="meta"><span>@(Model.ShowSku ? l.Sku : "")</span><b>@(Model.ShowPrice ? Fmt.Money(l.Price) : "")</b></div>
+                    }
+                    <div class="bc">@Html.Raw(l.BarcodeSvg)</div>
+                </div>
+                @if (Model.ShowQr && l.QrSvg != null) { <div class="qr">@Html.Raw(l.QrSvg)</div> }
+            </div>
+        }
+    </div>
+    <script src="~/js/admin.js" asp-append-version="true"></script>
+</body>
+</html>

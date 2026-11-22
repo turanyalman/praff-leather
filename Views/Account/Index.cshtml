@@ -1,0 +1,53 @@
+@model AccountDashboardViewModel
+@{ var u = Model.User; }
+<div class="acc">
+    <div class="aw">
+        <partial name="_Side" />
+        <div>
+            <h1>Hesabım</h1>
+            <div class="wl">Merhaba, @u.FullName</div>
+            <p class="sub">Hesap panelinizden siparişlerinizi, bilgilerinizi ve adreslerinizi yönetebilirsiniz.</p>
+            @if (!u.IsApproved)
+            {
+                <div class="note" style="margin-bottom:24px">
+                    <b class="gold">Toptan müşteri başvurunuz inceleniyor.</b><br />
+                    Firma bilgileriniz onaylandığında ürünlerimizi, toptan fiyatlarımızı görebilir ve sipariş verebilirsiniz. Bu süreçte bilgilerinizi ve adreslerinizi güncelleyebilirsiniz.
+                </div>
+            }
+            <div class="st3">
+                <div class="bx sc">@Icon.Box(36)<div><b>@Fmt.Number(Model.OrderCount)</b><small>Toplam Sipariş</small></div></div>
+                <div class="bx sc">@Icon.Cart(36)<div><b>@Fmt.Number(Model.ItemCount)</b><small>Toplam Ürün Adedi</small></div></div>
+                <div class="bx sc">@Icon.Layers(36)<div><b>@Fmt.Money(Model.TotalSpent)</b><small>Toplam Sipariş Tutarı</small></div></div>
+            </div>
+            <div class="ag">
+                <section class="bx bxp">
+                    <h2>Hesap Bilgilerim</h2>
+                    <dl class="dlist">
+                        <dt>Ad Soyad</dt><dd>@u.FullName</dd>
+                        <dt>E-posta</dt><dd>@u.Email</dd>
+                        <dt>Telefon</dt><dd>@Fmt.Masked(u.Phone)</dd>
+                        @if (!string.IsNullOrEmpty(u.CompanyName)) { <dt>Firma</dt><dd>@u.CompanyName</dd> }
+                        @if (!string.IsNullOrEmpty(u.TaxNumber)) { <dt>Vergi</dt><dd>@u.TaxOffice @u.TaxNumber</dd> }
+                        <dt>Üyelik</dt><dd>@Fmt.Date(u.CreatedAt)</dd>
+                        <dt>Durum</dt><dd><span class="badge @(u.IsApproved ? "b-ok" : "b-wait")">@(u.IsApproved ? "Onaylı toptan müşteri" : "Onay bekliyor")</span></dd>
+                    </dl>
+                    <a class="sbtn" style="margin-top:18px" href="/hesap/bilgiler">Bilgileri Düzenle</a>
+                </section>
+                <section class="bx bxp">
+                    <div class="sh"><h2 style="margin:0">Son Siparişlerim</h2><a href="/hesap/siparisler">Tüm Siparişlerim →</a></div>
+                    @if (Model.RecentOrders.Count == 0)
+                    {
+                        <p class="mut">Henüz siparişiniz yok. <a class="gold" href="/urunler">Ürünleri inceleyin →</a></p>
+                    }
+                    @foreach (var o in Model.RecentOrders)
+                    {
+                        <a class="or" href="/hesap/siparisler/@o.OrderNumber">
+                            <div><b>#@o.OrderNumber</b><small>@Fmt.Date(o.CreatedAt)</small></div>
+                            <div class="prc">@Fmt.Money(o.Total)<br /><span class="badge @Fmt.StatusCss(o.Status)">@Fmt.StatusText(o.Status)</span></div>
+                        </a>
+                    }
+                </section>
+            </div>
+        </div>
+    </div>
+</div>

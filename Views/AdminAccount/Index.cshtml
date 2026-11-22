@@ -1,0 +1,34 @@
+﻿@model AdminPasswordForm
+@{ var a = ViewData["Admin"] as PraffLeather.Models.Admin; }
+<div class="tb"><div><div class="eb">Yönetim Paneli</div><h1>Hesabım</h1></div></div>
+<div class="g2e">
+    <section class="cd">
+        <h2>Yönetici Bilgileri</h2>
+        @if (a != null)
+        {
+            <dl class="kv">
+                <dt>Ad</dt><dd>@a.FullName</dd>
+                <dt>E-posta</dt><dd>@a.Email</dd>
+                <dt>Oluşturma</dt><dd>@Fmt.DateTimeText(a.CreatedAt)</dd>
+                <dt>Son Giriş</dt><dd>@(a.LastLoginAt == null ? "—" : Fmt.DateTimeText(a.LastLoginAt.Value))</dd>
+            </dl>
+            <h2 style="margin-top:24px">Bilgileri Düzenle</h2>
+            <form class="fm" method="post" action="/admin/hesap/bilgiler" asp-antiforgery="true">
+                <label>Ad Soyad<input name="FullName" value="@a.FullName" maxlength="120" required /></label>
+                <label>E-posta (giriş adı)<input name="Email" type="email" value="@a.Email" maxlength="160" required /></label>
+                <label>Mevcut Şifre (onay için)<input name="CurrentPassword" type="password" autocomplete="current-password" required /></label>
+                <button class="lb2" type="submit">Bilgileri Kaydet</button>
+            </form>
+        }
+    </section>
+    <section class="cd">
+        <h2>Şifre Değiştir</h2>
+        <form class="fm" method="post" action="/admin/hesap/sifre" asp-antiforgery="true" novalidate>
+            <div class="val-sum" asp-validation-summary="ModelOnly"></div>
+            <label>Mevcut Şifre<input asp-for="CurrentPassword" type="password" autocomplete="current-password" /><span class="err" asp-validation-for="CurrentPassword"></span></label>
+            <label>Yeni Şifre<input asp-for="NewPassword" type="password" autocomplete="new-password" /><span class="err" asp-validation-for="NewPassword"></span><span class="hint">En az 10 karakter; büyük harf, küçük harf ve rakam.</span></label>
+            <label>Yeni Şifre (Tekrar)<input asp-for="ConfirmPassword" type="password" autocomplete="new-password" /><span class="err" asp-validation-for="ConfirmPassword"></span></label>
+            <button class="gb" type="submit">Şifreyi Değiştir</button>
+        </form>
+    </section>
+</div>

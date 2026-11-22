@@ -1,0 +1,32 @@
+﻿@model Order
+@{ var bank = ViewData["BankInfo"] as string; }
+<div class="sp">
+    <div class="pw" style="max-width:820px">
+        <div class="empty" style="text-align:left;padding:40px">
+            <div style="text-align:center">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>
+                <h1 style="font-size:40px">Siparişiniz Alındı</h1>
+                <p>Sipariş numaranız: <b class="gold">#@Model.OrderNumber</b> · @Fmt.DateTimeText(Model.CreatedAt)</p>
+            </div>
+            <div class="pay" style="margin:24px 0">
+                <b>Sonraki adım: Ödeme (@Model.PaymentMethod)</b>
+                Toplam <b>@Fmt.Money(Model.Total)</b> tutarını havale/EFT ile gönderin ve açıklamaya <b>@Model.OrderNumber</b> yazın. Ödemeniz onaylandığında siparişiniz hazırlanmaya başlar ve durumunu “Siparişlerim” sayfasından takip edebilirsiniz.
+                @if (!string.IsNullOrWhiteSpace(bank)) { <br /><br /><span style="white-space:pre-line">@bank</span> }
+                else { <text><br /><br />Banka bilgileri ekibimiz tarafından size iletilecektir.</text> }
+            </div>
+            @foreach (var i in Model.Items)
+            {
+                <div class="oline">
+                    <span class="im">@if (i.ImageUrl != null) { <img src="@i.ImageUrl" alt="" /> } else { <img class="mono" src="/images/brand/praff-monogram-champagne.png" alt="" /> }</span>
+                    <div><b>@i.ProductName</b><small>@i.Sku@(string.IsNullOrEmpty(i.ColorName) ? "" : " · " + i.ColorName) · @Fmt.Number(i.Quantity) × @Fmt.Money(i.UnitPrice)</small></div>
+                    <span class="gold">@Fmt.Money(i.LineTotal)</span>
+                </div>
+            }
+            <div class="gt"><b>Genel Toplam</b><span>@Fmt.Money(Model.Total)</span></div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+                <a class="btn btn-gold" href="/hesap/siparisler/@Model.OrderNumber">Sipariş Detayı</a>
+                <a class="btn btn-line" href="/urunler">Alışverişe Devam Et</a>
+            </div>
+        </div>
+    </div>
+</div>

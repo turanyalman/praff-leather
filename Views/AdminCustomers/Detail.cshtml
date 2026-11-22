@@ -1,0 +1,128 @@
+@model AdminCustomerViewModel
+@{
+    var f = Model.Form;
+    var u = Model.User;
+    var isNew = f.Id == 0;
+}
+<div class="tb">
+    <div><div class="eb"><a href="/admin/musteriler">Müşteriler</a> ›</div><h1>@(isNew ? "Yeni Müşteri" : (u!.CompanyName ?? u.FullName))</h1>
+        @if (!isNew) { <div class="ac" style="margin-top:8px">
+            @if (!u!.IsActive) { <span class="badge b-off">Pasif</span> } else if (u.IsApproved) { <span class="badge b-ok">Onaylı</span> } else { <span class="badge b-wait">Onay bekliyor</span> }
+            @if (u.EmailConfirmed) { <span class="badge b-ok" title="@(u.EmailConfirmedAt == null ? "" : Fmt.DateTimeText(u.EmailConfirmedAt.Value))">E-posta doğrulandı</span> } else { <span class="badge b-wait">E-posta doğrulanmadı</span> }
+            <span class="mut" style="font-size:13px">Kayıt @Fmt.Date(u.CreatedAt) · Son giriş @(u.LastLoginAt == null ? "—" : Fmt.DateTimeText(u.LastLoginAt.Value))@(u.ApprovedAt != null ? $" · Onay {Fmt.Date(u.ApprovedAt.Value)} ({u.ApprovedBy})" : "")</span>
+        </div> }
+    </div>
+    @if (!isNew)
+    {
+        <div class="ac">
+            <a class="lb2" href="/admin/eposta?musteri=@u!.Id">E-posta Gönder</a>
+            @if (!u.EmailConfirmed)
+            {
+                <form method="post" action="/admin/musteriler/@u.Id/kod-gonder" asp-antiforgery="true"><button class="lb2" type="submit">Doğrulama Kodu Gönder</button></form>
+                <form method="post" action="/admin/musteriler/@u.Id/eposta-dogrula" asp-antiforgery="true" data-confirm="E-posta adresi doğrulanmış olarak işaretlensin mi? (Örn. telefonla teyit ettiyseniz)"><button class="lb2" type="submit">Elle Doğrula</button></form>
+            }
+            @if (!u.IsApproved && u.IsActive)
+            {
+                <form method="post" action="/admin/musteriler/@u.Id/onay?approve=true" asp-antiforgery="true" data-confirm="@(u.EmailConfirmed ? "Başvuru onaylansın mı?" : "Müşterinin e-postası henüz doğrulanmadı. Yine de onaylansın mı?")"><button class="gb" type="submit">Başvuruyu Onayla</button></form>
+                <form method="post" action="/admin/musteriler/@u.Id/onay?approve=false" asp-antiforgery="true" data-confirm="Başvuru reddedilecek ve hesap pasife alınacak. Devam edilsin mi?"><button class="db" type="submit">Reddet</button></form>
+            }
+        </div>
+    }
+</div>
+
+@if (!isNew)
+{
+    <section class="st">
+        <div class="cd"><small class="k">Sipariş</small><strong>@Model.Orders.Count</strong></div>
+        <div class="cd"><small class="k">Toplam Alım</small><strong>@Fmt.Money(Model.Spent)</strong><div class="sub">İptaller hariç</div></div>
+        <div class="cd"><small class="k">Ürün Adedi</small><strong>@Fmt.Number(Model.Orders.Where(o => o.Status != OrderStatus.Cancelled).Sum(o => o.Items.Sum(i => i.Quantity)))</strong></div>
+        <div class="cd"><small class="k">Son Sipariş</small><strong style="font-size:22px">@(Model.Orders.Count == 0 ? "—" : Fmt.Date(Model.Orders[0].CreatedAt))</strong></div>
+    </section>
+}
+
+<form class="fm" method="post" action="/admin/musteriler/kaydet" asp-antiforgery="true" novalidate autocomplete="off">
+    <input type="hidden" asp-for="Form.Id" />
+    <div class="val-sum" asp-validation-summary="All"></div>
+    <div class="g2e">
+        <section class="cd fm">
+            <h2>Kişi ve İletişim</h2>
+            <div class="row2">
+                <label>Ad *<input asp-for="Form.FirstName" /><span class="err" asp-validation-for="Form.FirstName"></span></label>
+                <label>Soyad *<input asp-for="Form.LastName" /><span class="err" asp-validation-for="Form.LastName"></span></label>
+            </div>
+            <label>E-posta (giriş adı) *<input asp-for="Form.Email" type="email" /><span class="err" asp-validation-for="Form.Email"></span><span class="hint">Değiştirilirse müşterinin açık oturumları kapanır.</span></label>
+            <label>Telefon<input asp-for="Form.Phone" type="tel" /><span class="err" asp-validation-for="Form.Phone"></span></label>
+        </section>
+        <section class="cd fm">
+            <h2>Firma ve Vergi</h2>
+            <label>Firma Ünvanı<input asp-for="Form.CompanyName" /></label>
+            <div class="row2">
+                <label>Vergi Dairesi<input asp-for="Form.TaxOffice" /></label>
+                <label>Vergi No / T.C. No<input asp-for="Form.TaxNumber" inputmode="numeric" maxlength="11" /><span class="err" asp-validation-for="Form.TaxNumber"></span></label>
+            </div>
+            <label>İl<input asp-for="Form.City" /></label>
+        </section>
+        <section class="cd fm">
+            <h2>Hesap Durumu ve Şifre</h2>
+            <label class="ck"><input asp-for="Form.IsApproved" type="checkbox" /> Onaylı toptan müşteri (ürün ve fiyatları görür, sipariş verir)</label>
+            <label class="ck"><input asp-for="Form.IsActive" type="checkbox" /> Hesap aktif (pasif hesap giriş yapamaz)</label>
+            <label>@(isNew ? "Şifre *" : "Yeni Şifre Belirle")
+                <span class="pw"><input asp-for="Form.NewPassword" type="password" autocomplete="new-password" placeholder="@(isNew ? "En az 8 karakter, harf ve rakam" : "Değiştirmeyecekseniz boş bırakın")" /><button type="button" aria-label="Şifreyi göster" data-toggle-pass>@Icon.Eye(18)</button></span>
+                <span class="err" asp-validation-for="Form.NewPassword"></span>
+                <span class="hint">Şifreler güvenlik gereği görüntülenemez, yalnızca yenisi belirlenebilir. Değişince müşterinin açık oturumları kapanır; yeni şifreyi müşteriye siz iletin.</span>
+            </label>
+        </section>
+        <section class="cd fm">
+            <h2>Müşteri Notları</h2>
+            <label>Yalnızca yöneticiler görür<textarea asp-for="Form.AdminNotes" rows="7" placeholder="Örn. Ödeme vadesi 30 gün, özel iskonto, tercih ettiği kargo, görüşme notları…"></textarea></label>
+        </section>
+    </div>
+    <div class="ac"><button class="gb" type="submit">@(isNew ? "Müşteriyi Oluştur" : "Değişiklikleri Kaydet")</button>@if (isNew) { <a class="mut" href="/admin/musteriler">Vazgeç</a> }</div>
+</form>
+
+@if (!isNew)
+{
+    <section class="cd" id="adresler">
+        <div class="hrow"><h2>Adresler (@Model.Addresses.Count)</h2><a class="lb2" href="/admin/musteriler/@u!.Id/adres/0">+ Adres Ekle</a></div>
+        @if (Model.Addresses.Count == 0) { <div class="em">Kayıtlı adres yok.</div> }
+        <div class="addrs">
+            @foreach (var a in Model.Addresses)
+            {
+                <div class="addr">
+                    <b>@a.Title</b>@if (a.IsDefault) { <span class="badge b-gold" style="margin-left:6px">Varsayılan</span> }
+                    <p class="mut">@a.FullName · @a.Phone<br />@a.AddressLine<br />@a.District / @a.City @a.PostalCode</p>
+                    <div class="ac">
+                        <a class="sbtn" href="/admin/musteriler/@u.Id/adres/@a.Id">Düzenle</a>
+                        <form method="post" action="/admin/musteriler/@u.Id/adres/@a.Id/sil" asp-antiforgery="true" data-confirm="Adres silinsin mi?"><button class="sbtn dl" type="submit">Sil</button></form>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="cd">
+        <h2>Siparişler (@Model.Orders.Count)</h2>
+        @if (Model.Orders.Count == 0) { <div class="em">Bu müşterinin siparişi yok.</div> }
+        else
+        {
+            <div class="ov"><table>
+                <thead><tr><th>No</th><th>Tarih</th><th class="r">Adet</th><th>Durum</th><th>Ödeme</th><th class="r">Tutar</th></tr></thead>
+                <tbody>
+                @foreach (var o in Model.Orders)
+                {
+                    <tr><td><a class="gold" href="/admin/siparisler/@o.Id">#@o.OrderNumber</a></td><td>@Fmt.DateTimeText(o.CreatedAt)</td><td class="r">@Fmt.Number(o.Items.Sum(i => i.Quantity))</td><td><span class="badge @Fmt.StatusCss(o.Status)">@Fmt.StatusText(o.Status)</span></td><td>@Fmt.PaymentText(o.PaymentStatus)</td><td class="r">@Fmt.Money(o.Total)</td></tr>
+                }
+                </tbody>
+            </table></div>
+        }
+    </section>
+
+    <section class="cd">
+        <h2>Tehlikeli Bölge</h2>
+        <div class="ac">
+            <form method="post" action="/admin/musteriler/@u.Id/durum" asp-antiforgery="true" data-confirm="@(u.IsActive ? "Hesap pasife alınacak; müşteri giriş yapamaz. Devam edilsin mi?" : "Hesap yeniden aktifleştirilsin mi?")"><button class="lb2" type="submit">@(u.IsActive ? "Hesabı Pasife Al" : "Hesabı Aktifleştir")</button></form>
+            <form method="post" action="/admin/musteriler/@u.Id/sil" asp-antiforgery="true" data-confirm="Müşteri kalıcı olarak silinecek. Bu işlem geri alınamaz. Devam edilsin mi?"><button class="db" type="submit" disabled="@(Model.Orders.Count > 0)" title="@(Model.Orders.Count > 0 ? "Siparişi olan müşteri silinemez" : "")">Müşteriyi Sil</button></form>
+            @if (Model.Orders.Count > 0) { <span class="mut" style="font-size:13px">Siparişi olan müşteri silinemez; sipariş geçmişi korunur.</span> }
+        </div>
+    </section>
+}

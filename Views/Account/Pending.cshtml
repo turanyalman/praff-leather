@@ -1,0 +1,20 @@
+@inject SiteSettingsService SettingsService
+@{
+    var s = await SettingsService.GetAsync();
+    var wa = Fmt.WhatsAppLink(s.Raw(SettingKeys.WhatsApp), "Merhaba, toptan müşteri başvurum hakkında bilgi almak istiyorum.");
+}
+<div class="uy">
+    <div class="cd wide" style="text-align:center">
+        <div class="lg"><b>PRAFF</b><span>LEATHER</span></div>
+        <h1>Başvurunuz İnceleniyor</h1>
+        <p class="sb">Ürünlerimiz ve toptan fiyatlarımız yalnızca onaylı iş ortaklarımıza açıktır. Firma bilgileriniz ekibimiz tarafından kontrol edildikten sonra hesabınız onaylanacak ve tüm koleksiyonu görebileceksiniz.</p>
+        <div style="display:grid;gap:12px">
+            <a class="btn btn-grad btn-block" href="/hesap">Hesabıma Git</a>
+            @if (!string.IsNullOrEmpty(wa))
+            {
+                <a class="btn btn-line btn-block" href="@wa" target="_blank" rel="noopener">@Icon.WhatsApp() WhatsApp ile Bize Yazın</a>
+            }
+            <a class="btn btn-line btn-block" href="/#iletisim">İletişim Formu</a>
+        </div>
+    </div>
+</div>

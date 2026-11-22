@@ -1,0 +1,20 @@
+@model AddressForm
+@{ var u = (User)ViewData["Customer"]!; }
+<div class="tb"><div><div class="eb"><a href="/admin/musteriler">Müşteriler</a> › <a href="/admin/musteriler/@u.Id">@(u.CompanyName ?? u.FullName)</a> ›</div><h1>@(Model.Id == 0 ? "Yeni Adres" : "Adresi Düzenle")</h1></div></div>
+<form class="cd fm" method="post" action="/admin/musteriler/@u.Id/adres" asp-antiforgery="true" novalidate style="max-width:760px">
+    <input type="hidden" asp-for="Id" />
+    <div class="val-sum" asp-validation-summary="ModelOnly"></div>
+    <label>Adres Başlığı *<input asp-for="Title" placeholder="Örn. Mağaza, Depo" /><span class="err" asp-validation-for="Title"></span></label>
+    <div class="row2">
+        <label>Ad Soyad *<input asp-for="FullName" /><span class="err" asp-validation-for="FullName"></span></label>
+        <label>Telefon *<input asp-for="Phone" type="tel" /><span class="err" asp-validation-for="Phone"></span></label>
+    </div>
+    <div class="row2">
+        <label>İl *<input asp-for="City" /><span class="err" asp-validation-for="City"></span></label>
+        <label>İlçe *<input asp-for="District" /><span class="err" asp-validation-for="District"></span></label>
+    </div>
+    <label>Adres *<textarea asp-for="AddressLine" rows="3"></textarea><span class="err" asp-validation-for="AddressLine"></span></label>
+    <label style="max-width:220px">Posta Kodu<input asp-for="PostalCode" inputmode="numeric" maxlength="5" /><span class="err" asp-validation-for="PostalCode"></span></label>
+    <label class="ck"><input asp-for="IsDefault" type="checkbox" /> Varsayılan adres</label>
+    <div class="ac"><button class="gb" type="submit">Kaydet</button><a class="mut" href="/admin/musteriler/@u.Id#adresler">Vazgeç</a></div>
+</form>

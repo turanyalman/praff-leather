@@ -1,0 +1,66 @@
+@model List<Product>
+@{
+    var q = ViewData["q"] as string;
+    var filtre = ViewData["filtre"] as string;
+    (string, string) Badge(int stock, int critical, int min) =>
+        stock == 0 ? ("b-err", "Stokta yok") : stock <= critical ? ("b-err", "Kritik") : stock < min ? ("b-wait", "Min. altında") : ("b-ok", "Yeterli");
+}
+<div class="tb">
+    <div><div class="eb">Yönetim Paneli</div><h1>Stok Yönetimi</h1></div>
+    <div class="ac"><a class="gb" href="/admin/barkod-stok">Barkodla Stok İşlemleri</a><a class="lb2" href="/admin/stok/hareketler">Tüm Stok Hareketleri</a></div>
+</div>
+<form class="flt" method="get" action="/admin/stok">
+    <label>Ara<input class="inp" type="search" name="q" value="@q" placeholder="Ad, stok kodu veya barkod" /></label>
+    <label>Filtre
+        <select class="inp" name="filtre">
+            <option value="">Tümü</option>
+            <option value="kritik" selected="@(filtre == "kritik")">Kritik stok (ürün eşiğinin altında)</option>
+            <option value="yok" selected="@(filtre == "yok")">Stokta yok</option>
+        </select>
+    </label>
+    <button class="lb2" type="submit">Filtrele</button>
+</form>
+<section class="cd">
+    @if (Model.Count == 0)
+    {
+        <div class="em">Ürün bulunamadı.</div>
+    }
+    else
+    {
+        <div class="ov"><table style="min-width:900px">
+            <thead><tr><th>Ürün / Renk</th><th>Stok Kodu</th><th class="r">Mevcut</th><th>Durum</th><th>Stok İşlemi</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var p in Model)
+            {
+                var colors = p.Colors.OrderBy(c => c.SortOrder).ToList();
+                var b = Badge(p.StockQuantity, colors.Count > 0 ? -1 : p.CriticalStockLevel, p.MinOrderQuantity);
+                <tr class="@(p.IsActive ? null : "off") @(colors.Count > 0 ? "grp" : null)">
+                    <td><a class="gold" href="/admin/urunler/@p.Id">@p.Name</a><br /><small class="mut">Kritik seviye: @p.CriticalStockLevel@(colors.Count > 0 ? $" · {colors.Count} renk" : "")</small></td>
+                    <td>@p.Sku</td>
+                    <td class="r"><strong style="font-size:18px">@Fmt.Number(p.StockQuantity)</strong>@if (colors.Count > 0) { <br /><small class="mut">toplam</small> }</td>
+                    <td><span class="badge @b.Item1">@b.Item2</span></td>
+                    <td>
+                        @if (colors.Count == 0)
+                        {
+                            <partial name="_StockForm" model="(p.Id, (int?)null, q)" />
+                        }
+                    </td>
+                    <td><a class="sbtn" href="/admin/stok/hareketler?urun=@p.Id">Geçmiş</a></td>
+                </tr>
+                @foreach (var c in colors)
+                {
+                    var cb = Badge(c.StockQuantity, p.CriticalStockLevel, 0);
+                    <tr class="sub @(p.IsActive ? null : "off")">
+                        <td><span class="sw" style="background:@c.HexCode"></span>@c.Name</td>
+                        <td class="mut">@(c.Barcode ?? "—")</td>
+                        <td class="r"><strong>@Fmt.Number(c.StockQuantity)</strong></td>
+                        <td><span class="badge @cb.Item1">@cb.Item2</span></td>
+                        <td><partial name="_StockForm" model="(p.Id, (int?)c.Id, q)" /></td>
+                        <td></td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table></div>
+    }
+</section>

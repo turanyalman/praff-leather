@@ -1,0 +1,78 @@
+@model Paged<StockMovement>
+@{
+    var product = ViewData["Product"] as Product;
+    var urun = ViewData["urun"] as int?;
+    var tur = ViewData["tur"] as string;
+    var bas = ViewData["baslangic"] as string;
+    var bit = ViewData["bitis"] as string;
+    string Qs(int? page = null)
+    {
+        var p = new List<string>();
+        if (urun != null) p.Add("urun=" + urun);
+        if (!string.IsNullOrEmpty(tur)) p.Add("tur=" + Uri.EscapeDataString(tur));
+        if (!string.IsNullOrEmpty(bas)) p.Add("baslangic=" + Uri.EscapeDataString(bas));
+        if (!string.IsNullOrEmpty(bit)) p.Add("bitis=" + Uri.EscapeDataString(bit));
+        if (page is > 1) p.Add("sayfa=" + page);
+        return p.Count == 0 ? "" : "?" + string.Join("&", p);
+    }
+}
+<div class="tb"><div><div class="eb"><a href="/admin/stok">Stok</a> ›</div><h1>Stok Hareketleri@(product != null ? $" — {product.Name}" : "")</h1></div>
+    <div class="ac">
+        <a class="lb2" href="/admin/stok/hareketler.csv@(Qs())">Excel’e Aktar (CSV)</a>
+        @if (product != null) { <a class="lb2" href="/admin/stok/hareketler">Tüm ürünler</a> }
+    </div>
+</div>
+<form class="flt" method="get" action="/admin/stok/hareketler">
+    @if (urun != null) { <input type="hidden" name="urun" value="@urun" /> }
+    <label>İşlem türü
+        <select class="inp" name="tur">
+            <option value="">Tümü</option>
+            @foreach (var t in Enum.GetValues<StockMovementType>())
+            {
+                <option value="@t" selected="@(tur == t.ToString())">@Fmt.MovementText(t)</option>
+            }
+        </select>
+    </label>
+    <label>Başlangıç<input class="inp" type="date" name="baslangic" value="@bas" /></label>
+    <label>Bitiş<input class="inp" type="date" name="bitis" value="@bit" /></label>
+    <button class="lb2" type="submit">Filtrele</button>
+</form>
+<section class="cd">
+    <p class="mut" style="margin:0 0 10px;font-size:13px">@Fmt.Number(Model.Total) hareket</p>
+    @if (Model.Items.Count == 0)
+    {
+        <div class="em">Kayıtlı stok hareketi yok.</div>
+    }
+    else
+    {
+        <div class="ov"><table>
+            <thead><tr><th>Tarih</th><th>Ürün</th><th>İşlem</th><th class="r">Adet</th><th class="r">Önce</th><th class="r">Sonra</th><th>Not</th><th>Kim</th></tr></thead>
+            <tbody>
+            @foreach (var m in Model.Items)
+            {
+                <tr>
+                    <td>@Fmt.DateTimeText(m.CreatedAt)</td>
+                    <td>@(m.Product?.Name ?? "—")@if (m.VariantName != null) { <span class="mut"> — @m.VariantName</span> }<br /><small class="mut">@m.Product?.Sku</small></td>
+                    <td><span class="badge @Fmt.MovementCss(m.Type)">@Fmt.MovementText(m.Type)</span></td>
+                    <td class="r" style="color:@(m.Quantity >= 0 ? "var(--ok)" : "var(--err)")">@(m.Quantity > 0 ? "+" : "")@Fmt.Number(m.Quantity)</td>
+                    <td class="r">@Fmt.Number(m.StockBefore)</td>
+                    <td class="r">@Fmt.Number(m.StockAfter)</td>
+                    <td>@m.Note @if (m.OrderId != null) { <a class="gold" href="/admin/siparisler/@m.OrderId">→ sipariş</a> }</td>
+                    <td class="mut">@m.CreatedBy</td>
+                </tr>
+            }
+            </tbody>
+        </table></div>
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="pager" aria-label="Sayfalar">
+                @for (var i = 1; i <= Model.TotalPages; i++)
+                {
+                    if (i == Model.Page) { <span class="on">@i</span> }
+                    else if (i <= 3 || i > Model.TotalPages - 2 || Math.Abs(i - Model.Page) <= 2) { <a href="/admin/stok/hareketler@(Qs(i))">@i</a> }
+                    else if (i == 4 || i == Model.TotalPages - 2) { <span>…</span> }
+                }
+            </nav>
+        }
+    }
+</section>

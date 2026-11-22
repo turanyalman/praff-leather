@@ -1,0 +1,73 @@
+﻿@model Order
+@inject SiteSettingsService SettingsService
+@{
+    var s = await SettingsService.GetAsync();
+}
+<div class="acc">
+    <div class="aw">
+        <partial name="_Side" />
+        <div>
+            <a class="btn-ghost" href="/hesap/siparisler" style="display:inline-flex;align-items:center;gap:8px">@Icon.Back() Siparişlerim</a>
+            <h1>Sipariş #@Model.OrderNumber</h1>
+            <p class="sub">@Fmt.DateTimeText(Model.CreatedAt) · <span class="badge @Fmt.StatusCss(Model.Status)">@Fmt.StatusText(Model.Status)</span> · <span class="badge @(Model.PaymentStatus == PaymentStatus.Paid ? "b-ok" : "b-wait")">@Fmt.PaymentText(Model.PaymentStatus)</span></p>
+
+            @if (Model.PaymentStatus == PaymentStatus.Awaiting && Model.Status != OrderStatus.Cancelled)
+            {
+                <div class="note" style="margin-bottom:24px">
+                    <b class="gold">Ödeme yöntemi: @Model.PaymentMethod</b><br />
+                    Siparişiniz ödeme onayından sonra hazırlanır. Açıklamaya sipariş numaranızı (<b>@Model.OrderNumber</b>) yazmayı unutmayın.
+                    @if (s.Has(SettingKeys.BankInfo)) { <br /><span style="white-space:pre-line">@s.Raw(SettingKeys.BankInfo)</span> }
+                    else { <text><br />Banka bilgileri için bizimle iletişime geçin.</text> }
+                </div>
+            }
+
+            <div class="ag">
+                <section class="bx bxp ov">
+                    <h2>Ürünler</h2>
+                    @foreach (var i in Model.Items)
+                    {
+                        <div class="oline">
+                            <span class="im">@if (i.ImageUrl != null) { <img src="@i.ImageUrl" alt="" /> } else { <img class="mono" src="/images/brand/praff-monogram-champagne.png" alt="" /> }</span>
+                            <div><b>@i.ProductName</b><small>@i.Sku@(string.IsNullOrEmpty(i.ColorName) ? "" : " · " + i.ColorName) · @Fmt.Number(i.Quantity) × @Fmt.Money(i.UnitPrice)</small></div>
+                            <span class="gold">@Fmt.Money(i.LineTotal)</span>
+                        </div>
+                    }
+                    <div class="srow l"><span>Ara Toplam</span><span>@Fmt.Money(Model.Subtotal)</span></div>
+                    <div class="srow"><span>Kargo</span><span>@(Model.ShippingCost > 0 ? Fmt.Money(Model.ShippingCost) : "Ücretsiz")</span></div>
+                    <div class="gt" style="margin-bottom:0"><b>Genel Toplam</b><span>@Fmt.Money(Model.Total)</span></div>
+                </section>
+                <div>
+                    <section class="bx bxp">
+                        <h2>Teslimat</h2>
+                        <dl class="dlist">
+                            <dt>Alıcı</dt><dd>@Model.FullName</dd>
+                            <dt>Telefon</dt><dd>@Model.Phone</dd>
+                            <dt>E-posta</dt><dd>@Model.Email</dd>
+                            @if (!string.IsNullOrEmpty(Model.CompanyName)) { <dt>Firma</dt><dd>@Model.CompanyName</dd> }
+                            @if (!string.IsNullOrEmpty(Model.TaxNumber)) { <dt>Vergi No</dt><dd>@Model.TaxNumber</dd> }
+                            <dt>Adres</dt><dd>@Model.AddressLine<br />@Model.District / @Model.City @Model.PostalCode</dd>
+                            @if (!string.IsNullOrEmpty(Model.Notes)) { <dt>Not</dt><dd>@Model.Notes</dd> }
+                        </dl>
+                    </section>
+                    <section class="bx bxp" style="margin-top:24px">
+                        <h2>Sipariş Geçmişi</h2>
+                        <ul class="timeline">
+                            @foreach (var h in Model.StatusHistory.OrderBy(h => h.CreatedAt))
+                            {
+                                <li><div><b>@Fmt.StatusText(h.Status)</b> <small class="mut">· @Fmt.DateTimeText(h.CreatedAt)</small>@if (!string.IsNullOrEmpty(h.Note)) { <br /><small class="mut">@h.Note</small> }</div></li>
+                            }
+                        </ul>
+                    </section>
+                    @if (OrderService.CustomerCanCancel(Model))
+                    {
+                        <form method="post" action="/hesap/siparisler/@Model.OrderNumber/iptal" asp-antiforgery="true" style="margin-top:16px"
+                              data-confirm="Sipariş iptal edilecek. Bu işlem geri alınamaz. Devam edilsin mi?">
+                            <button class="btn-ghost" type="submit">Siparişi İptal Et</button>
+                            <p class="mut" style="font-size:13px;margin:8px 0 0">Sipariş onaylanana kadar iptal edebilirsiniz.</p>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

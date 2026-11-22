@@ -1,0 +1,60 @@
+@model ContentPageForm
+@{
+    var isNew = Model.Id == 0;
+    var updated = ViewData["UpdatedAt"] as DateTime?;
+}
+<div class="tb">
+    <div><div class="eb"><a href="/admin/sayfalar">Sayfalar ve Yasal Metinler</a> ›</div><h1>@(isNew ? "Yeni Sayfa" : Model.Title)</h1>
+        @if (updated != null) { <div class="mut" style="font-size:13px;margin-top:6px">Son güncelleme: @Fmt.DateTimeText(updated.Value)</div> }
+    </div>
+    @if (!isNew) { <a class="lb2" href="/sayfa/@Model.Slug" target="_blank" rel="noopener">Sitede Gör ↗</a> }
+</div>
+
+<form class="fm" method="post" action="/admin/sayfalar/kaydet" asp-antiforgery="true" novalidate data-rich-form>
+    <input type="hidden" asp-for="Id" />
+    <div class="val-sum" asp-validation-summary="All"></div>
+    <div class="g2">
+        <section class="cd fm">
+            <label>Başlık *<input asp-for="Title" maxlength="160" /><span class="err" asp-validation-for="Title"></span></label>
+            <div class="lab">İçerik</div>
+            <div class="rte" data-rte>
+                <div class="rte-bar" role="toolbar" aria-label="Biçimlendirme">
+                    <button type="button" class="sbtn" data-cmd="bold" title="Kalın"><b>K</b></button>
+                    <button type="button" class="sbtn" data-cmd="italic" title="İtalik"><i>İ</i></button>
+                    <button type="button" class="sbtn" data-cmd="underline" title="Altı çizili"><u>A</u></button>
+                    <button type="button" class="sbtn" data-block="h2" title="Başlık">Başlık</button>
+                    <button type="button" class="sbtn" data-block="h3" title="Alt başlık">Alt Başlık</button>
+                    <button type="button" class="sbtn" data-block="p" title="Paragraf">Paragraf</button>
+                    <button type="button" class="sbtn" data-cmd="insertUnorderedList" title="Madde işaretli liste">• Liste</button>
+                    <button type="button" class="sbtn" data-cmd="insertOrderedList" title="Numaralı liste">1. Liste</button>
+                    <button type="button" class="sbtn" data-link title="Bağlantı ekle">Bağlantı</button>
+                    <button type="button" class="sbtn" data-cmd="unlink" title="Bağlantıyı kaldır">Bağlantıyı Kaldır</button>
+                    <button type="button" class="sbtn" data-cmd="removeFormat" title="Biçimi temizle">Temizle</button>
+                    <button type="button" class="sbtn" data-html title="HTML kaynağını göster/gizle">&lt;/&gt;</button>
+                </div>
+                <div class="rte-area" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Sayfa içeriği" data-rte-area>@Html.Raw(ContentPageService.Sanitize(Model.Content))</div>
+                <textarea class="rte-src" asp-for="Content" rows="16" hidden data-rte-src></textarea>
+            </div>
+            <span class="hint">Kaydedilen içerik güvenlik için temizlenir: yalnızca kalın, italik, başlık, liste, bağlantı gibi biçimler kalır; betik ve stil kodları silinir.</span>
+        </section>
+        <div class="fm">
+            <section class="cd fm">
+                <h2>Ayarlar</h2>
+                <label>Adres (slug)
+                    @if (Model.IsSystem)
+                    {
+                        <input value="@Model.Slug" disabled /><span class="hint">Sistem sayfasının adresi değiştirilemez.</span>
+                    }
+                    else
+                    {
+                        <input asp-for="Slug" maxlength="160" placeholder="Boş bırakılırsa başlıktan üretilir" /><span class="hint">Türkçe karakterler otomatik çevrilir (ç→c, ğ→g, ı→i, ö→o, ş→s, ü→u).</span>
+                    }
+                    <span class="err" asp-validation-for="Slug"></span>
+                </label>
+                <label class="ck"><input asp-for="ShowInFooter" type="checkbox" /> Footer’da göster</label>
+                @if (!Model.IsSystem) { <label class="ck"><input asp-for="IsActive" type="checkbox" /> Yayında (aktif)</label> }
+            </section>
+            <button class="gb" type="submit">@(isNew ? "Sayfayı Oluştur" : "Değişiklikleri Kaydet")</button>
+        </div>
+    </div>
+</form>

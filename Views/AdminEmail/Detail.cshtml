@@ -1,0 +1,19 @@
+@model EmailLog
+<div class="tb">
+    <div><div class="eb"><a href="/admin/eposta">E-posta</a> ›</div><h1>@Model.Subject</h1></div>
+    @if (Model.Success) { <span class="badge b-ok">Gönderildi</span> } else { <span class="badge b-err">Gönderilemedi</span> }
+</div>
+<section class="cd">
+    <dl class="kv">
+        <dt>Alıcı</dt><dd>@Model.ToEmail</dd>
+        <dt>Tarih</dt><dd>@Fmt.DateTimeText(Model.CreatedAt)</dd>
+        <dt>Tür</dt><dd>@Model.Category</dd>
+        <dt>Gönderen</dt><dd>@Model.SentBy</dd>
+        @if (!string.IsNullOrEmpty(Model.Error)) { <dt>Hata</dt><dd class="err">@Model.Error</dd> }
+    </dl>
+</section>
+<section class="cd">
+    <h2>İçerik</h2>
+    @* Gövde sistemin kendi şablonlarından veya kodlanmış yönetici metninden oluşur; yine de temizlenerek gösterilir. *@
+    <div class="mailbody">@Html.Raw(ContentPageService.Sanitize(Model.Body))</div>
+</section>

@@ -1,0 +1,236 @@
+@model HomeViewModel
+@{
+    var s = Model.Settings;
+    var wa = Fmt.WhatsAppLink(s.Raw(SettingKeys.WhatsApp), "Merhaba, PRAFF LEATHER toptan ürünleri hakkında bilgi almak istiyorum.");
+    var slides = new[] { s[SettingKeys.HeroImage], "/images/banner.jpg", "/images/brand-leather.jpg" }.Distinct().ToArray();
+    var contactError = ViewData["ContactError"] as bool? == true;
+    var approved = User.IsApprovedCustomer();
+    var isCustomer = User.Identity?.IsAuthenticated == true && User.Identity.AuthenticationType == AuthSchemes.Customer;
+    ViewData["LowStock"] = s.Int(SettingKeys.LowStockThreshold, 50);
+}
+
+<section class="hero" data-hero>
+    @for (var i = 0; i < slides.Length; i++)
+    {
+        <img class="slide @(i == 0 ? "on" : null)" src="@slides[i]" alt="@(i == 0 ? "Deri üzerinde PRAFF LEATHER amblemi" : "")" loading="@(i == 0 ? "eager" : "lazy")" />
+    }
+    <div class="hc">
+        <div class="eb">@s[SettingKeys.HeroEyebrow]</div>
+        <h1>@s[SettingKeys.HeroTitle]</h1>
+        <p>@s[SettingKeys.HeroSubtitle]</p>
+        <div class="bt">
+            <a class="btn btn-gold" href="@(approved ? "/urunler" : "#kategoriler")">Koleksiyonu Keşfet ↗</a>
+            <a class="tl" href="#hikaye">Marka Hikâyemiz →</a>
+            @if (!string.IsNullOrEmpty(wa))
+            {
+                <a class="tl" href="@wa" target="_blank" rel="noopener">WhatsApp</a>
+            }
+            else
+            {
+                <a class="tl" href="#iletisim">İletişim</a>
+            }
+        </div>
+    </div>
+    <div class="hs">
+        @if (slides.Length > 1)
+        {
+            <div class="sl">
+                <span data-hero-index>01 / @slides.Length.ToString("00")</span><span class="pb"><i data-hero-bar style="width:@(100 / slides.Length)%"></i></span>
+                <div class="ar2">
+                    <button type="button" aria-label="Önceki görsel" data-hero-prev>@Icon.ChevronL()</button>
+                    <button type="button" aria-label="Sonraki görsel" data-hero-next>@Icon.Chevron()</button>
+                </div>
+            </div>
+        }
+        <ul class="ft4">
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3l4 2 4-2 5 4-2 4 1 6-5 3-3-2-3 2-5-3 1-6-2-4z"/></svg><div><b>Gerçek Deri</b><small>%100 doğal ve dayanıklı.</small></div></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="19" r="2.5"/><circle cx="14" cy="19" r="2.5"/><path d="M7 17L15 3M13 17L5 3"/></svg><div><b>El İşçiliği</b><small>Usta zanaatkâr dokunuşu.</small></div></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg><div><b>Toptan Tedarik</b><small>Güvenilir ve düzenli teslimat.</small></div></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c-2-3-3.5-4-5.5-4C4 8 2.5 9.8 2.5 12s1.5 4 4 4c2 0 3.5-1 5.5-4zm0 0c2 3 3.5 4 5.5 4 2.5 0 4-1.8 4-4s-1.5-4-4-4c-2 0-3.5 1-5.5 4z"/></svg><div><b>Zamansız Tasarım</b><small>Her dönemde şık ve kalıcı.</small></div></li>
+        </ul>
+    </div>
+</section>
+
+<section class="sec" aria-labelledby="degerler">
+    <div class="le">Neden PRAFF</div>
+    <h2 class="h2" id="degerler" style="margin-bottom:48px">Ustalıkla üretilen, uzun ömürlü deri</h2>
+    <div class="g3">
+        <div class="val"><i>01</i><h3>Zanaat</h3><p>Her parça, deriyi tanıyan ustaların elinden çıkar. Kesimden kenar boyamaya kadar her adım titizlikle yapılır.</p></div>
+        <div class="val"><i>02</i><h3>Karakter</h3><p>Tam tahıl ve bitkisel tabaklanmış deriler zamanla doğal bir patina kazanır; her ürün kendi hikâyesini taşır.</p></div>
+        <div class="val"><i>03</i><h3>Zamansız Tasarım</h3><p>Sade çizgiler ve dengeli oranlar; trendlerle eskimeyen, yıllarca kullanılacak parçalar.</p></div>
+    </div>
+</section>
+
+@if (Model.Categories.Count > 0)
+{
+    <section class="sec" id="kategoriler" style="padding-top:0" aria-labelledby="kat-h">
+        <div class="le">Koleksiyon</div>
+        <h2 class="h2" id="kat-h">Kategoriler</h2>
+        <div class="cats">
+            @foreach (var c in Model.Categories)
+            {
+                <a class="ct @(c.ImageUrl == null ? "e" : null)" href="@(approved ? "/urunler?kategori=" + c.Category.Slug : "#toptan")">
+                    <img src="@(c.ImageUrl ?? "/images/brand/praff-monogram-champagne.png")" alt="" loading="lazy" />
+                    <span><small>@c.ProductCount ürün</small>@c.Category.Name</span>
+                </a>
+            }
+        </div>
+    </section>
+}
+
+@if (!approved)
+{
+    <section class="lt" id="toptan" aria-labelledby="toptan-h">
+        <div class="lw gate">
+            <div class="le">Toptan İş Ortaklığı</div>
+            <h2 id="toptan-h">Koleksiyon ve fiyatlar iş ortaklarımıza özel</h2>
+            @if (isCustomer)
+            {
+                <p>Başvurunuz ekibimiz tarafından inceleniyor. Hesabınız onaylandığında tüm ürünleri, toptan fiyatları ve stok bilgilerini görebilir, doğrudan sipariş verebilirsiniz.</p>
+                <div class="gate-b"><a class="gbtn" href="/hesap">Hesabımı Görüntüle</a>@if (!string.IsNullOrEmpty(wa)) { <a class="gbtn o" href="@wa" target="_blank" rel="noopener">WhatsApp ile Yazın</a> }</div>
+            }
+            else
+            {
+                <p>PRAFF LEATHER yalnızca mağaza ve kurumsal alıcılarla çalışır. Ürün detayları, toptan fiyatlar, minimum sipariş adetleri ve stok durumu onaylı müşterilerimize açıktır.</p>
+                <ol class="steps">
+                    <li><b>01</b><span>Firma bilgilerinizle başvurun</span></li>
+                    <li><b>02</b><span>Ekibimiz başvurunuzu onaylasın</span></li>
+                    <li><b>03</b><span>Fiyatları görün, toptan sipariş verin</span></li>
+                </ol>
+                <div class="gate-b"><a class="gbtn" href="/hesap/kayit">Toptan Müşteri Başvurusu</a><a class="gbtn o" href="/hesap/giris">Müşteri Girişi</a></div>
+            }
+        </div>
+    </section>
+}
+else
+{
+<section class="lt" id="urunler" aria-labelledby="urun-h">
+    <div class="lw">
+        <div class="lh">
+            <div><div class="le">PRAFF LEATHER</div><h2 id="urun-h">Ürünler</h2><p>Öne çıkan toptan ürünlerimiz.</p></div>
+            <form class="sr" method="get" action="/urunler" role="search">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2A1B12" stroke-width="1.6" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+                <input type="search" name="q" aria-label="Ürünlerde ara" placeholder="Ürün adı veya kodu ile ara..." maxlength="80" />
+                <button type="submit">Ara</button>
+            </form>
+        </div>
+        <div class="ch" aria-label="Kategoriler">
+            <a class="on" href="/urunler">Tümü (@Model.TotalProducts)</a>
+            @foreach (var c in Model.Categories)
+            {
+                <a href="/urunler?kategori=@c.Category.Slug">@c.Category.Name (@c.ProductCount)</a>
+            }
+        </div>
+        <div class="tbr"><span>@Model.Featured.Count öne çıkan ürün</span></div>
+        <div class="pgr">
+            @if (Model.Featured.Count == 0)
+            {
+                <div class="empty-l"><h3>Henüz ürün eklenmedi</h3><p>Ürünler yönetim panelinden eklendiğinde burada görünecek.</p></div>
+            }
+            @foreach (var p in Model.Featured)
+            {
+                <partial name="_ProductCard" model="p" view-data="ViewData" />
+            }
+        </div>
+        @if (Model.TotalProducts > 0)
+        {
+            <div class="more"><a href="/urunler">Tüm ürünleri gör @Icon.Arrow()</a></div>
+        }
+    </div>
+</section>
+}
+
+<section class="tri" aria-label="PRAFF LEATHER görselleri">
+    <div class="tw">
+        <img class="t1" src="/images/marble.jpg" alt="Deri çanta, saat ve parfüm mermer zeminde" loading="lazy" />
+        <img class="t2" src="/images/brand-leather.jpg" alt="PRAFF LEATHER — Handcrafted. Authentic. Timeless." loading="lazy" />
+        <img class="t3" src="/images/model.jpg" alt="Siyah kombinle deri çanta taşıyan erkek" loading="lazy" />
+    </div>
+</section>
+
+<section class="bk" id="hikaye">
+    <img src="/images/voyager.jpg" alt="" loading="lazy" />
+    <div class="cw bkg">
+        <div class="bkl">
+            <div class="le">PRAFF LEATHER</div>
+            <h2>Biz Kimiz?</h2>
+            <p>PRAFF LEATHER, gerçek deri işçiliğini modern tasarım anlayışıyla buluşturan, kaliteli ve zamansız deri ürünler sunan bir Türk markasıdır.</p>
+            <p>Malzeme seçiminden son dikişe kadar her aşamayı kontrol ederiz. Her ürünümüzde dayanıklılığı, estetiği ve ustalığı bir araya getirerek uzun yıllar kullanılabilecek değerli parçalar üretiriz.</p>
+            <p>İş ortaklarımıza düzenli stok, net minimum sipariş koşulları ve tutarlı kalite sunarak mağazalarında güvenle satabilecekleri bir koleksiyon hazırlıyoruz.</p>
+        </div>
+        <div class="bkr">
+            <div class="vm"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="13" r="8"/><circle cx="11" cy="13" r="4.5"/><circle cx="11" cy="13" r=".8"/><path d="M11 13l8-8M16 3v3h3"/></svg><div><b>Vizyonumuz</b><p>Deri ürünlerinde Türkiye’den doğan kaliteyi uluslararası pazarlarda temsil eden öncü bir marka olmak.</p></div></div>
+            <div class="vm"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21l7-12 4 6 2-3 5 9z"/><path d="M10 9V3l5 2-5 2"/></svg><div><b>Misyonumuz</b><p>Doğal malzemeler, usta işçilik ve sürdürülebilir üretim anlayışıyla iş ortaklarımıza uzun ömürlü ve özel deri ürünler sunmak.</p></div></div>
+            <div class="vm"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3l4 2 4-2 5 4-2 4 1 6-5 3-3-2-3 2-5-3 1-6-2-4z"/></svg><div><b>Malzeme</b><p>Tam tahıl ve bitkisel tabaklanmış dana derisi, mumlu dikiş ipliği ve dayanıklı metal aksesuarlar.</p></div></div>
+        </div>
+    </div>
+</section>
+
+<section class="ctc" id="iletisim">
+    <img src="/images/hero.jpg" alt="" loading="lazy" />
+    <div class="cw">
+        <div class="cg">
+            <div class="cl">
+                <div class="le">PRAFF LEATHER</div>
+                <h2>İletişime Geçin</h2>
+                <p>Ürünlerimiz, toptan tedarik veya iş birliği hakkında bilgi almak için bizimle iletişime geçebilirsiniz.</p>
+                <ul class="cf4">
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/><path d="M19 20c0 1.5-2 2-5 2"/></svg><div><b>Hızlı Destek</b><small>En kısa sürede dönüş yapıyoruz.</small></div></li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg><div><b>Toptan Tedarik</b><small>Mağazanız için özel çözümler.</small></div></li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l4-3 4 1 3-2 4 3 3-1M3 11v5l5 4 3-2 2 1 4-3 3-2v-4"/><path d="M8 14l3 2M11 12l3 2"/></svg><div><b>İş Birliği</b><small>Uzun vadeli iş ortaklıkları.</small></div></li>
+                </ul>
+                @if (!string.IsNullOrEmpty(wa))
+                {
+                    <a class="wa-big" href="@wa" target="_blank" rel="noopener">@Icon.WhatsApp(24) WhatsApp ile Hemen Yazın</a>
+                }
+            </div>
+            <form class="cc" method="post" action="/iletisim" asp-antiforgery="true" novalidate>
+                <h3>Bize Mesaj Gönderin</h3>
+                @if (contactError)
+                {
+                    <div class="val-sum" asp-validation-summary="All"></div>
+                }
+                <label><span class="vh">Ad Soyad</span><input asp-for="Contact.FullName" placeholder="Ad Soyad *" autocomplete="name" required /></label>
+                <label><span class="vh">E-posta</span><input asp-for="Contact.Email" type="email" placeholder="E-posta *" autocomplete="email" required /></label>
+                <label><span class="vh">Telefon</span><input asp-for="Contact.Phone" type="tel" placeholder="Telefon (isteğe bağlı)" autocomplete="tel" /></label>
+                <label>
+                    <span class="vh">Konu</span>
+                    <select asp-for="Contact.Subject" required>
+                        <option value="">Konu seçin *</option>
+                        @foreach (var sub in ContactForm.Subjects)
+                        {
+                            <option value="@sub" selected="@(Model.Contact.Subject == sub)">@sub</option>
+                        }
+                    </select>
+                </label>
+                <label><span class="vh">Mesajınız</span><textarea asp-for="Contact.Message" rows="4" placeholder="Mesajınız *" required></textarea></label>
+                <label class="vh" aria-hidden="true">Web sitesi<input asp-for="Contact.Website" tabindex="-1" autocomplete="off" /></label>
+                <label class="kvkk"><input asp-for="Contact.AcceptKvkk" type="checkbox" required /><span><a href="/sayfa/kvkk-aydinlatma-metni" target="_blank" rel="noopener">KVKK Aydınlatma Metni</a>'ni okudum, kişisel verilerimin bu kapsamda işlenmesini kabul ediyorum.</span></label>
+                <button class="btn btn-grad" type="submit">@Icon.Send() Mesajı Gönder</button>
+            </form>
+            <div class="cr">
+                @if (!string.IsNullOrEmpty(wa))
+                {
+                    <a href="@wa" target="_blank" rel="noopener">@Icon.WhatsApp(36)<div><b>WhatsApp</b><small>Hemen yazın</small></div>@Icon.Chevron(20)</a>
+                }
+                @if (s.Has(SettingKeys.InstagramUrl))
+                {
+                    <a href="@s.Raw(SettingKeys.InstagramUrl)" target="_blank" rel="noopener">@Icon.Instagram(36)<div><b>Instagram</b><small>@(s.Has(SettingKeys.InstagramHandle) ? s.Raw(SettingKeys.InstagramHandle) : "Bizi takip edin")</small></div>@Icon.Chevron(20)</a>
+                }
+                @if (s.Has(SettingKeys.ContactEmail))
+                {
+                    <a href="mailto:@s.Raw(SettingKeys.ContactEmail)">@Icon.Mail(36)<div><b>E-posta</b><small>@s.Raw(SettingKeys.ContactEmail)</small></div>@Icon.Chevron(20)</a>
+                }
+                @if (string.IsNullOrEmpty(wa) && !s.Has(SettingKeys.InstagramUrl) && !s.Has(SettingKeys.ContactEmail))
+                {
+                    <div class="na">@Icon.Mail(36)<div><b>İletişim formu</b><small>Mesajınız doğrudan ekibimize ulaşır.</small></div></div>
+                }
+            </div>
+        </div>
+        <div class="cs3">
+            <div class="i2">@Icon.Pin(44)<div><b>Adres</b><small>@(s.Has(SettingKeys.Address) ? s.Raw(SettingKeys.Address) : "Adres bilgisi yakında eklenecek")</small></div></div>
+            <div class="i2">@Icon.Phone(44)<div><b>Telefon</b><small>@if (s.Has(SettingKeys.Phone)) { <a href="tel:@s.Raw(SettingKeys.Phone).Replace(" ", "")">@s.Raw(SettingKeys.Phone)</a> } else { <text>İletişim formunu kullanın</text> }</small></div></div>
+            <div class="i2">@Icon.Clock(44)<div><b>Çalışma Saatleri</b><small>@s[SettingKeys.WorkingHours]</small></div></div>
+        </div>
+    </div>
+</section>

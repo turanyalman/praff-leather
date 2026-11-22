@@ -1,0 +1,11 @@
+@{
+    var side = ViewData["Side"] as string ?? "";
+}
+<nav class="sd" aria-label="Hesap menüsü">
+    <a class="@(side == "home" ? "on" : null)" href="/hesap">@Icon.User()Hesabım</a>
+    <a class="@(side == "orders" ? "on" : null)" href="/hesap/siparisler">@Icon.Box()Siparişlerim</a>
+    <a class="@(side == "addresses" ? "on" : null)" href="/hesap/adresler">@Icon.Pin()Adres Bilgilerim</a>
+    <a class="@(side == "profile" ? "on" : null)" href="/hesap/bilgiler">@Icon.Gear()Hesap Bilgilerim</a>
+    <a class="@(side == "password" ? "on" : null)" href="/hesap/sifre">@Icon.Lock()Şifre Değiştir</a>
+    <form method="post" action="/hesap/cikis" asp-antiforgery="true"><button type="submit">@Icon.Logout()Çıkış Yap</button></form>
+</nav>

@@ -1,0 +1,26 @@
+@model ForgotForm
+@{
+    var sent = ViewData["Sent"] as bool? == true;
+}
+<div class="uy">
+    <form class="cd" method="post" action="/hesap/sifremi-unuttum" asp-antiforgery="true" novalidate aria-label="Şifremi Unuttum">
+        <div class="lg"><b>PRAFF</b><span>LEATHER</span></div>
+        <h1>Şifremi Unuttum</h1>
+        @if (sent)
+        {
+            <p class="sb">Bu e-posta adresi kayıtlıysa, şifre sıfırlama bağlantısı gönderildi. Bağlantı 1 saat geçerlidir.</p>
+            @if (ViewData["EmailConfigured"] as bool? != true)
+            {
+                <p class="note fgrp">Not: E-posta sunucusu (SMTP) henüz yapılandırılmadığı için e-posta gerçekte gönderilemiyor. Yönetici, README'deki adımlarla SMTP ayarlarını tamamlamalıdır.</p>
+            }
+            <p class="ft"><a href="/hesap/giris">← Giriş Sayfasına Dön</a></p>
+        }
+        else
+        {
+            <p class="sb">Kayıtlı e-posta adresinizi girin, şifre sıfırlama bağlantısını size gönderelim.</p>
+            <div class="fgrp"><label class="fl2">@Icon.Mail()<input asp-for="Email" type="email" placeholder="E-posta adresiniz" aria-label="E-posta" autocomplete="email" required /></label><span class="err" asp-validation-for="Email"></span></div>
+            <button class="btn btn-grad btn-block" type="submit" style="margin-top:8px">Şifre Sıfırlama Linki Gönder</button>
+            <p class="ft"><a href="/hesap/giris">← Giriş Sayfasına Dön</a></p>
+        }
+    </form>
+</div>

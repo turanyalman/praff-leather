@@ -1,0 +1,63 @@
+@{
+}
+<div class="tb">
+    <div><div class="eb">Stok ›</div><h1>Barkodla Stok İşlemleri</h1></div>
+    <a class="lb2" href="/admin/stok/hareketler">Stok Hareketleri</a>
+</div>
+
+<div class="scan" data-scan>
+    <div class="modes" role="tablist" aria-label="İşlem türü">
+        <button type="button" class="mode on" data-mode="giris" role="tab" aria-selected="true">＋ Stok Girişi</button>
+        <button type="button" class="mode" data-mode="cikis" role="tab" aria-selected="false">－ Stok Çıkışı</button>
+        <button type="button" class="mode" data-mode="sayim" role="tab" aria-selected="false">☰ Sayım</button>
+    </div>
+
+    <section class="cd scanbox">
+        <form class="scanform" data-scan-form autocomplete="off">
+            <label class="lab" for="scan-code">Barkodu okutun (veya yazıp Enter’a basın)</label>
+            <div class="scanrow">
+                <input id="scan-code" class="inp big" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Okuyucuyu bu kutuya tutun…" data-scan-input autofocus />
+                <label class="qty"><span>Adet</span><input class="inp" type="number" min="1" max="100000" value="1" data-scan-qty aria-label="Adet" /></label>
+            </div>
+            <div class="scanacts">
+                <button class="lb2" type="button" data-camera>📷 Kamerayla Okut</button>
+                <button class="lb2" type="button" data-undo disabled>↶ Son İşlemi Geri Al</button>
+                <span class="mut" data-mode-hint>Her okutma stoğa 1 adet ekler (adet kutusundan değiştirebilirsiniz).</span>
+            </div>
+        </form>
+        <div class="cam" hidden data-cam-box>
+            <div id="cam-reader"></div>
+            <button class="sbtn" type="button" data-cam-close>Kamerayı Kapat</button>
+            <p class="hint">Kamera yalnızca HTTPS bağlantıda çalışır.</p>
+        </div>
+        <div class="result" role="status" aria-live="polite" data-result hidden></div>
+        <div class="variants" hidden data-variants></div>
+    </section>
+
+    <section class="cd" data-count-panel hidden>
+        <div class="hrow"><h2>Sayım Listesi</h2><span class="mut" data-count-total></span></div>
+        <p class="mut" style="margin:0 0 12px;font-size:13px">Okutulan her ürün sayılır. Bitince “Sayımı Kaydet”e basın: stok sayılan miktara eşitlenir ve farklar listelenir. Okutulmayan ürünlere dokunulmaz.</p>
+        <div class="ov"><table>
+            <thead><tr><th>Ürün</th><th class="r">Sistem</th><th class="r">Sayılan</th><th class="r">Fark</th><th></th></tr></thead>
+            <tbody data-count-body></tbody>
+        </table></div>
+        <div class="flt" style="margin-top:14px">
+            <label>Not<input class="inp" type="text" maxlength="200" placeholder="Örn. Kasım depo sayımı" data-count-note /></label>
+            <button class="gb" type="button" data-count-save>Sayımı Kaydet</button>
+            <button class="lb2" type="button" data-count-clear>Listeyi Temizle</button>
+        </div>
+    </section>
+
+    <section class="cd" data-log-panel>
+        <div class="hrow"><h2>Bu Oturumda Okutulanlar</h2><span class="mut" data-log-count>0 işlem</span></div>
+        <div class="ov"><table>
+            <thead><tr><th>Saat</th><th>İşlem</th><th>Ürün</th><th class="r">Adet</th><th class="r">Stok</th></tr></thead>
+            <tbody data-log-body><tr class="emptyrow"><td colspan="5" class="mut">Henüz okutma yok.</td></tr></tbody>
+        </table></div>
+    </section>
+</div>
+
+@section Scripts {
+    @* Kamera kütüphanesi yalnızca "Kamerayla Okut"a basılınca yüklenir. *@
+    <script src="~/js/scan.js" asp-append-version="true" data-camera-lib="/lib/html5-qrcode/html5-qrcode.min.js"></script>
+}

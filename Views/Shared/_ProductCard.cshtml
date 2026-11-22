@@ -1,0 +1,49 @@
+@model Product
+@{
+    var low = ViewData["LowStock"] as int? ?? 50;
+    var img = Model.MainImageUrl;
+    var stockCls = Model.StockQuantity <= 0 ? "no" : Model.StockQuantity <= low ? "low" : "";
+    var firstColor = Model.Colors.OrderBy(c => c.SortOrder).FirstOrDefault()?.Name ?? "";
+    var url = $"/urun/{Model.Slug}";
+}
+<article class="pc">
+    <a class="pm" href="@url" aria-label="@Model.Name detayları">
+        @if (img != null)
+        {
+            <img src="@img" alt="@Model.Name" loading="lazy" />
+        }
+        else
+        {
+            <span class="ph2"><img src="/images/brand/praff-monogram-champagne.png" alt="" />Fotoğraf eklenecek</span>
+        }
+        @if (Model.StockQuantity <= 0)
+        {
+            <span class="bd out">Tükendi</span>
+        }
+        else if (!string.IsNullOrEmpty(Model.Badge))
+        {
+            <span class="bd">@Model.Badge</span>
+        }
+    </a>
+    <div class="pb2">
+        <div>
+            <div class="pcat">@Model.Category?.Name</div>
+            <div class="pn"><a href="@url">@Model.Name</a></div>
+            <div class="ps">@Model.Sku · Min. @Fmt.Number(Model.MinOrderQuantity) adet</div>
+        </div>
+        <div class="pst @stockCls"><i></i>@Fmt.StockText(Model.StockQuantity, low)</div>
+        <div class="pf">
+            <span class="pp">@Fmt.Money(Model.Price) <small>/ adet</small></span>
+            <div class="pa">
+                <a class="cb2 ghost" href="@url" aria-label="@Model.Name detayları">@Icon.Eye(20)</a>
+                <form method="post" action="/sepet/ekle" asp-antiforgery="true" data-ajax-cart>
+                    <input type="hidden" name="productId" value="@Model.Id" />
+                    <input type="hidden" name="quantity" value="@Model.MinOrderQuantity" />
+                    <input type="hidden" name="color" value="@firstColor" />
+                    <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+                    <button class="cb2" type="submit" aria-label="@Model.Name — @Model.MinOrderQuantity adet sepete ekle" title="Minimum adet (@Model.MinOrderQuantity) sepete ekle" disabled="@(Model.StockQuantity < Model.MinOrderQuantity)">@Icon.Cart()</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</article>

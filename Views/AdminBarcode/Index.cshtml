@@ -1,0 +1,91 @@
+@model List<BarcodeRow>
+@{
+    var f = (BarcodeSettingsForm)ViewData["Form"]!;
+    var q = ViewData["q"] as string;
+    var filtre = ViewData["filtre"] as string;
+    var missing = ViewData["Missing"] as int? ?? 0;
+}
+<div class="tb">
+    <div><div class="eb">Site Ayarları ›</div><h1>Barkod &amp; QR</h1></div>
+    <a class="lb2" href="/admin/barkod-stok">Barkodla Stok İşlemleri →</a>
+</div>
+
+<div class="g2">
+    <section class="cd">
+        <div class="hrow"><h2>Ürünler ve Barkodlar</h2><span class="mut" style="font-size:13px">@Model.Count kalem@(missing > 0 ? $" · {missing} barkodsuz" : "")</span></div>
+        <form class="flt" method="get" action="/admin/barkod" style="margin-bottom:12px">
+            <label>Ara<input class="inp" type="search" name="q" value="@q" placeholder="Ad, stok kodu veya barkod" /></label>
+            <label>Göster
+                <select class="inp" name="filtre">
+                    <option value="">Tümü</option>
+                    <option value="eksik" selected="@(filtre == "eksik")">Barkodu olmayanlar</option>
+                </select>
+            </label>
+            <button class="lb2" type="submit">Filtrele</button>
+        </form>
+        @if (missing > 0)
+        {
+            <form method="post" action="/admin/barkod/eksikleri-olustur" asp-antiforgery="true" data-confirm="@missing ürüne/renge yeni barkod oluşturulacak. Devam edilsin mi?" style="margin-bottom:16px">
+                <button class="gb" type="submit">Barkodu Olmayan @missing Kaleme Barkod Oluştur</button>
+            </form>
+        }
+        <form method="get" action="/admin/barkod/etiket" target="_blank">
+            <div class="ov"><table>
+                <thead><tr><th><input type="checkbox" data-check-all="sec" aria-label="Tümünü seç" /></th><th>Ürün</th><th>Stok Kodu</th><th>Barkod</th><th class="r">Stok</th></tr></thead>
+                <tbody>
+                @foreach (var r in Model)
+                {
+                    var key = r.VariantId == null ? $"P{r.ProductId}" : $"V{r.VariantId}";
+                    <tr class="@(r.IsActive ? null : "off")">
+                        <td>@if (!string.IsNullOrEmpty(r.Barcode)) { <input type="checkbox" name="sec" value="@key" aria-label="@r.Name seç" /> }</td>
+                        <td><a class="gold" href="/admin/urunler/@r.ProductId#barkod">@r.Name</a>@if (r.VariantName != null) { <span class="mut"> — @r.VariantName</span> }</td>
+                        <td>@r.Sku</td>
+                        <td>@if (string.IsNullOrEmpty(r.Barcode)) { <span class="badge b-wait">Yok</span> } else { <code class="bcode">@r.Barcode</code> }</td>
+                        <td class="r">@Fmt.Number(r.Stock)</td>
+                    </tr>
+                }
+                </tbody>
+            </table></div>
+            <div class="flt" style="margin-top:16px">
+                <label>Her kalemden adet<input class="inp" type="number" name="adet" value="1" min="1" max="500" /></label>
+                <label>Etiket boyutu
+                    <select class="inp" name="boyut">
+                        <option value="">Ayarlardaki (@f.LabelSize)</option>
+                        <option value="50x30">50 × 30 mm</option>
+                        <option value="40x25">40 × 25 mm</option>
+                        <option value="a4-3x8">A4 etiket kağıdı (3×8)</option>
+                    </select>
+                </label>
+                <button class="gb" type="submit">Seçilenleri Yazdır</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="cd">
+        <h2>Ayarlar</h2>
+        <form class="fm" method="post" action="/admin/barkod/ayarlar" asp-antiforgery="true">
+            <label>Barkod formatı
+                <select name="Format">
+                    <option value="code128" selected="@(f.Format == "code128")">Code 128 — firma içi kod (önerilen)</option>
+                    <option value="ean13" selected="@(f.Format == "ean13")">EAN-13 — mağaza içi aralık (2 ile başlar)</option>
+                </select>
+                <span class="hint">Code 128 örneği: <b>@(f.Prefix)000123</b>. EAN-13 mağaza içi kodlar “20” ile başlar ve kontrol basamağı doğru hesaplanır. <b>Not:</b> Bu kodlar resmî GS1 barkodu değildir; yalnızca firma içi kullanım içindir. Ürünü zincir mağazalara satacaksanız GS1 Türkiye’den barkod almanız gerekir.</span>
+            </label>
+            <label>Kod öneki (Code 128)<input name="Prefix" value="@f.Prefix" maxlength="6" placeholder="PL" /><span class="hint">Yalnızca harf ve rakam. Varsayılan: PL</span></label>
+            <label>Etiket boyutu
+                <select name="LabelSize">
+                    <option value="50x30" selected="@(f.LabelSize == "50x30")">50 × 30 mm (termal etiket)</option>
+                    <option value="40x25" selected="@(f.LabelSize == "40x25")">40 × 25 mm (termal etiket)</option>
+                    <option value="a4-3x8" selected="@(f.LabelSize == "a4-3x8")">A4 etiket kağıdı (3 × 8 = 24 etiket)</option>
+                </select>
+            </label>
+            <div class="lab">Etikette gösterilecekler</div>
+            <label class="ck"><input type="checkbox" name="ShowName" value="true" checked="@f.ShowName" /> Ürün adı (ve renk)</label>
+            <label class="ck"><input type="checkbox" name="ShowSku" value="true" checked="@f.ShowSku" /> Stok kodu</label>
+            <label class="ck"><input type="checkbox" name="ShowPrice" value="true" checked="@f.ShowPrice" /> Toptan fiyat</label>
+            <label class="ck"><input type="checkbox" name="ShowQr" value="true" checked="@f.ShowQr" /> QR kod (ürün sayfası adresi)</label>
+            <p class="hint" style="margin:0">QR kod, Site Ayarları’ndaki “Site Adresi”ni kullanır. Etikette her zaman PRAFF LEATHER yazısı, barkod ve altında kodun düz yazısı bulunur.</p>
+            <button class="gb" type="submit">Ayarları Kaydet</button>
+        </form>
+    </section>
+</div>

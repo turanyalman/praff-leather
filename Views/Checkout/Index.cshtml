@@ -1,0 +1,82 @@
+﻿@model CheckoutViewModel
+@{ var f = Model.Form; }
+<div class="sp">
+    <div class="pw">
+        <nav class="bc" aria-label="Konum"><a href="/" aria-label="Ana sayfa">@Icon.Home()</a> › <a href="/sepet">Sepetim</a> › <span class="gold">Siparişi Tamamla</span></nav>
+        <div class="tt">@Icon.Box(48)<div><h1>Siparişi Tamamla</h1><p>Teslimat bilgilerinizi kontrol edin ve siparişinizi onaylayın.</p></div></div>
+
+        <form method="post" action="/odeme" asp-antiforgery="true" novalidate data-once>
+            <input type="hidden" asp-for="Form.IdempotencyKey" />
+            <div class="cgr">
+                <div>
+                    <div class="val-sum" style="margin-bottom:20px" asp-validation-summary="All"></div>
+                    <section class="box">
+                        <h2>Teslimat Bilgileri</h2>
+                        @if (Model.Addresses.Count > 0)
+                        {
+                            <div class="addr-pick" role="radiogroup" aria-label="Kayıtlı adresler" data-address-pick>
+                                @foreach (var a in Model.Addresses)
+                                {
+                                    <label>
+                                        <input type="radio" name="Form.AddressId" value="@a.Id" checked="@(f.AddressId == a.Id)"
+                                               data-fullname="@a.FullName" data-phone="@a.Phone" data-city="@a.City" data-district="@a.District" data-postal="@a.PostalCode" data-line="@a.AddressLine" />
+                                        <span><b>@a.Title</b> — @a.FullName, @a.Phone<br /><small class="mut">@a.AddressLine, @a.District / @a.City</small></span>
+                                    </label>
+                                }
+                                <label><input type="radio" name="Form.AddressId" value="" checked="@(f.AddressId == null)" data-new /><span><b>Yeni adres gir</b></span></label>
+                            </div>
+                        }
+                        <div style="display:grid;gap:16px">
+                            <div class="grid2">
+                                <label class="field">Ad Soyad *<input asp-for="Form.FullName" autocomplete="name" /><span class="err" asp-validation-for="Form.FullName"></span></label>
+                                <label class="field">Telefon *<input asp-for="Form.Phone" type="tel" autocomplete="tel" /><span class="err" asp-validation-for="Form.Phone"></span></label>
+                            </div>
+                            <label class="field">E-posta *<input asp-for="Form.Email" type="email" autocomplete="email" /><span class="err" asp-validation-for="Form.Email"></span></label>
+                            <div class="grid2">
+                                <label class="field">Firma Adı<input asp-for="Form.CompanyName" autocomplete="organization" /></label>
+                                <label class="field">Vergi No<input asp-for="Form.TaxNumber" /></label>
+                            </div>
+                            <label class="field">Teslimat Adresi *<textarea asp-for="Form.AddressLine" rows="3" autocomplete="street-address"></textarea><span class="err" asp-validation-for="Form.AddressLine"></span></label>
+                            <div class="grid2">
+                                <label class="field">İl *<input asp-for="Form.City" autocomplete="address-level1" /><span class="err" asp-validation-for="Form.City"></span></label>
+                                <label class="field">İlçe *<input asp-for="Form.District" autocomplete="address-level2" /><span class="err" asp-validation-for="Form.District"></span></label>
+                            </div>
+                            <label class="field" style="max-width:240px">Posta Kodu<input asp-for="Form.PostalCode" inputmode="numeric" maxlength="5" autocomplete="postal-code" /><span class="err" asp-validation-for="Form.PostalCode"></span></label>
+                            <label class="field">Sipariş Notu<textarea asp-for="Form.Notes" rows="3" placeholder="Teslimat, faturalandırma veya paketleme ile ilgili notunuz"></textarea></label>
+                            <label class="ck"><input asp-for="Form.SaveAddress" type="checkbox" /> Bu adresi adreslerime kaydet</label>
+                        </div>
+                    </section>
+                    <section class="box">
+                        <h2>Ödeme Yöntemi</h2>
+                        <div class="pay">
+                            <b>@PaymentMethods.BankTransfer</b>
+                            Online kart ödemesi henüz aktif değildir. Siparişiniz <b>“Ödeme Bekleniyor”</b> durumunda oluşturulur; havale/EFT ödemeniz ekibimiz tarafından onaylandıktan sonra hazırlanır.
+                            @if (!string.IsNullOrWhiteSpace(Model.BankInfo)) { <br /><br /><span style="white-space:pre-line">@Model.BankInfo</span> }
+                            else { <text><br /><br />Banka bilgileri sipariş sonrası tarafınıza iletilecektir.</text> }
+                        </div>
+                    </section>
+                </div>
+                <aside class="sm" aria-label="Sipariş özeti">
+                    <h2>Sipariş Özeti</h2>
+                    @foreach (var l in Model.Cart.Lines)
+                    {
+                        <div class="oline">
+                            <span class="im">@if (l.ImageUrl != null) { <img src="@l.ImageUrl" alt="" /> } else { <img class="mono" src="/images/brand/praff-monogram-champagne.png" alt="" /> }</span>
+                            <div><b>@l.Name</b><small>@(string.IsNullOrEmpty(l.ColorName) ? "" : l.ColorName + " · ")@Fmt.Number(l.Quantity) × @Fmt.Money(l.UnitPrice)</small></div>
+                            <span class="gold">@Fmt.Money(l.LineTotal)</span>
+                        </div>
+                    }
+                    <div class="srow l"><span>Ara Toplam</span><span>@Fmt.Money(Model.Cart.Subtotal)</span></div>
+                    <div class="srow"><span>Kargo</span><span>@(Model.Shipping > 0 ? Fmt.Money(Model.Shipping) : "Ücretsiz")</span></div>
+                    <div class="gt"><b>Genel Toplam</b><span>@Fmt.Money(Model.Total)</span></div>
+                    <label class="ck" style="align-items:flex-start;margin-bottom:6px;font-size:14px"><input asp-for="Form.AcceptTerms" type="checkbox" style="margin-top:2px" /><span><a class="gold" href="/sayfa/satis-ve-teslimat-kosullari" target="_blank">Satış ve Teslimat Koşulları</a>'nı ve <a class="gold" href="/sayfa/iade-ve-degisim-kosullari" target="_blank">İade Koşulları</a>'nı okudum, onaylıyorum.</span></label>
+                    <span class="err" style="display:block;margin-bottom:8px" asp-validation-for="Form.AcceptTerms"></span>
+                    <label class="ck" style="align-items:flex-start;margin-bottom:6px;font-size:14px"><input asp-for="Form.AcceptKvkk" type="checkbox" style="margin-top:2px" /><span><a class="gold" href="/sayfa/kvkk-aydinlatma-metni" target="_blank">KVKK Aydınlatma Metni</a>'ni okudum.</span></label>
+                    <span class="err" style="display:block;margin-bottom:12px" asp-validation-for="Form.AcceptKvkk"></span>
+                    <button class="btn btn-grad btn-block" type="submit">@Icon.Cart() Siparişi Onayla</button>
+                    <div class="ex">Fiyatlar ve stok, siparişi onayladığınız anda sunucuda yeniden kontrol edilir.</div>
+                </aside>
+            </div>
+        </form>
+    </div>
+</div>

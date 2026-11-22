@@ -1,0 +1,68 @@
+﻿@using PraffLeather.Controllers.Admin
+@model Paged<AdminCustomersController.CustomerRow>
+@{
+    var durum = ViewData["durum"] as string;
+    var pending = ViewData["PendingCount"] as int? ?? 0;
+    var here = Context.Request.Path + Context.Request.QueryString;
+}
+<div class="tb">
+    <div><div class="eb">Yönetim Paneli</div><h1>Müşteriler</h1></div>
+    <div class="ac"><span class="mut">@Model.Total müşteri</span><a class="lb2" href="/admin/musteriler.csv">Excel’e Aktar (CSV)</a><a class="gb" href="/admin/musteriler/yeni">+ Yeni Müşteri</a></div>
+</div>
+
+<nav class="tabsx" aria-label="Müşteri filtreleri">
+    <a class="@(string.IsNullOrEmpty(durum) ? "on" : null)" href="/admin/musteriler">Tümü</a>
+    <a class="@(durum == "onay" ? "on" : null)" href="/admin/musteriler?durum=onay">Onay Bekleyen @if (pending > 0) { <span class="cnt">@pending</span> }</a>
+    <a class="@(durum == "onayli" ? "on" : null)" href="/admin/musteriler?durum=onayli">Onaylı</a>
+    <a class="@(durum == "pasif" ? "on" : null)" href="/admin/musteriler?durum=pasif">Pasif</a>
+</nav>
+
+<form class="flt" method="get" action="/admin/musteriler">
+    @if (!string.IsNullOrEmpty(durum)) { <input type="hidden" name="durum" value="@durum" /> }
+    <label>Ara<input class="inp" type="search" name="q" value="@ViewData["q"]" placeholder="Ad, firma, e-posta, telefon, vergi no, il" style="min-width:300px" /></label>
+    <button class="lb2" type="submit">Ara</button>
+</form>
+
+<section class="cd">
+    @if (Model.Items.Count == 0)
+    {
+        <div class="em">@(durum == "onay" ? "Onay bekleyen başvuru yok." : "Müşteri bulunamadı.")</div>
+    }
+    else
+    {
+        <div class="ov"><table style="min-width:860px">
+            <thead><tr><th>Firma / Müşteri</th><th>Vergi</th><th>İletişim</th><th>Kayıt</th><th class="r">Sipariş</th><th class="r">Toplam</th><th>Durum</th><th>İşlem</th></tr></thead>
+            <tbody>
+            @foreach (var r in Model.Items)
+            {
+                var u = r.User;
+                <tr class="@(u.IsActive ? null : "off")">
+                    <td><a class="gold" href="/admin/musteriler/@u.Id">@(u.CompanyName ?? u.FullName)</a><br /><small class="mut">@u.FullName@(string.IsNullOrEmpty(u.City) ? "" : " · " + u.City)</small></td>
+                    <td>@(u.TaxNumber ?? "—")<br /><small class="mut">@u.TaxOffice</small></td>
+                    <td>@u.Email @if (!u.EmailConfirmed) { <span class="badge b-wait" title="E-posta doğrulanmadı">doğrulanmadı</span> }<br /><small class="mut">@u.Phone</small></td>
+                    <td>@Fmt.Date(u.CreatedAt)</td>
+                    <td class="r">@r.Orders</td>
+                    <td class="r">@Fmt.Money(r.Spent)</td>
+                    <td>
+                        @if (!u.IsActive) { <span class="badge b-off">Pasif</span> }
+                        else if (u.IsApproved) { <span class="badge b-ok">Onaylı</span> }
+                        else { <span class="badge b-wait">Onay bekliyor</span> }
+                    </td>
+                    <td class="ac">
+                        @if (!u.IsApproved && u.IsActive)
+                        {
+                            <form method="post" action="/admin/musteriler/@u.Id/onay?approve=true&returnUrl=@Uri.EscapeDataString(here)" asp-antiforgery="true"><button class="sbtn ok" type="submit">Onayla</button></form>
+                            <form method="post" action="/admin/musteriler/@u.Id/onay?approve=false&returnUrl=@Uri.EscapeDataString(here)" asp-antiforgery="true" data-confirm="Başvuru reddedilecek ve hesap pasife alınacak. Devam edilsin mi?"><button class="sbtn dl" type="submit">Reddet</button></form>
+                        }
+                        <a class="sbtn" href="/admin/musteriler/@u.Id">Düzenle</a>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table></div>
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="pager">@for (var i = 1; i <= Model.TotalPages; i++) { if (i == Model.Page) { <span class="on">@i</span> } else { <a href="/admin/musteriler?sayfa=@i&q=@ViewData["q"]&durum=@durum">@i</a> } }</nav>
+        }
+    }
+</section>

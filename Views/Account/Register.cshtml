@@ -1,0 +1,31 @@
+@model RegisterForm
+<div class="uy">
+    <form class="cd wide" method="post" action="/hesap/kayit" asp-antiforgery="true" novalidate aria-label="Üye Ol">
+        <div class="lg"><b>PRAFF</b><span>LEATHER</span></div>
+        <h1>Toptan Müşteri Başvurusu</h1>
+        <p class="sb">Ürün ve fiyatlarımız yalnızca onaylı iş ortaklarımıza açıktır. Bilgilerinizi gönderin, firmanız onaylandığında tüm koleksiyonu görebilirsiniz.</p>
+        <div class="val-sum fgrp" asp-validation-summary="ModelOnly"></div>
+        <input type="hidden" asp-for="ReturnUrl" />
+        <div class="grid2">
+            <div class="fgrp"><label class="fl2">@Icon.User(20)<input asp-for="FirstName" placeholder="Ad *" aria-label="Ad" autocomplete="given-name" required /></label><span class="err" asp-validation-for="FirstName"></span></div>
+            <div class="fgrp"><label class="fl2">@Icon.User(20)<input asp-for="LastName" placeholder="Soyad *" aria-label="Soyad" autocomplete="family-name" required /></label><span class="err" asp-validation-for="LastName"></span></div>
+        </div>
+        <div class="fgrp"><label class="fl2">@Icon.Mail()<input asp-for="Email" type="email" placeholder="E-posta adresi *" aria-label="E-posta" autocomplete="email" required /></label><span class="err" asp-validation-for="Email"></span></div>
+        <div class="fgrp"><label class="fl2">@Icon.Phone()<input asp-for="Phone" type="tel" placeholder="Telefon numarası *" aria-label="Telefon" autocomplete="tel" required /></label><span class="err" asp-validation-for="Phone"></span></div>
+        <div class="fgrp"><label class="fl2">@Icon.Box(20)<input asp-for="CompanyName" placeholder="Firma ünvanı *" aria-label="Firma ünvanı" autocomplete="organization" required /></label><span class="err" asp-validation-for="CompanyName"></span></div>
+        <div class="grid2">
+            <div class="fgrp"><label class="fl2">@Icon.Layers(20)<input asp-for="TaxOffice" placeholder="Vergi dairesi *" aria-label="Vergi dairesi" required /></label><span class="err" asp-validation-for="TaxOffice"></span></div>
+            <div class="fgrp"><label class="fl2">@Icon.Layers(20)<input asp-for="TaxNumber" placeholder="Vergi no / T.C. kimlik no *" aria-label="Vergi numarası" inputmode="numeric" maxlength="11" required /></label><span class="err" asp-validation-for="TaxNumber"></span></div>
+        </div>
+        <div class="fgrp"><label class="fl2">@Icon.Pin(20)<input asp-for="City" placeholder="İl *" aria-label="İl" autocomplete="address-level1" required /></label><span class="err" asp-validation-for="City"></span></div>
+        <div class="fgrp"><label class="fl2">@Icon.Lock(20)<input asp-for="Password" type="password" placeholder="Şifre (en az 8 karakter, harf ve rakam) *" aria-label="Şifre" autocomplete="new-password" required /><button type="button" aria-label="Şifreyi göster" data-toggle-pass>@Icon.Eye()</button></label><span class="err" asp-validation-for="Password"></span></div>
+        <div class="fgrp"><label class="fl2">@Icon.Lock(20)<input asp-for="ConfirmPassword" type="password" placeholder="Şifre tekrarı *" aria-label="Şifre tekrarı" autocomplete="new-password" required /><button type="button" aria-label="Şifreyi göster" data-toggle-pass>@Icon.Eye()</button></label><span class="err" asp-validation-for="ConfirmPassword"></span></div>
+        <label class="ck" style="align-items:flex-start;margin:4px 0 4px"><input asp-for="AcceptTerms" type="checkbox" style="margin-top:12px" /><span style="padding-top:8px"><a href="/sayfa/kullanim-kosullari" target="_blank">Kullanım Koşulları</a>'nı ve <a href="/sayfa/gizlilik-politikasi" target="_blank">Gizlilik Politikası</a>'nı okudum, kabul ediyorum.</span></label>
+        <span class="err fgrp" style="display:block" asp-validation-for="AcceptTerms"></span>
+        <label class="ck" style="align-items:flex-start;margin:0 0 4px"><input asp-for="AcceptKvkk" type="checkbox" style="margin-top:12px" /><span style="padding-top:8px"><a href="/sayfa/kvkk-aydinlatma-metni" target="_blank">KVKK Aydınlatma Metni</a>'ni okudum, kişisel verilerimin bu kapsamda işlenmesini kabul ediyorum.</span></label>
+        <span class="err fgrp" style="display:block" asp-validation-for="AcceptKvkk"></span>
+        <p class="sb" style="margin:4px 0 12px;font-size:13px">Başvurudan sonra e-posta adresinize 6 haneli bir doğrulama kodu gönderilir.</p>
+        <button class="btn btn-grad btn-block" type="submit">Başvuruyu Gönder</button>
+        <p class="ft">Zaten hesabınız var mı? <a href="/hesap/giris">Giriş Yap</a></p>
+    </form>
+</div>

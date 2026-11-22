@@ -1,0 +1,27 @@
+@model VerifyEmailForm
+@{
+    var mail = ViewData["Email"] as string;
+}
+<div class="uy">
+    <div class="cd">
+        <div class="lg"><b>PRAFF</b><span>LEATHER</span></div>
+        <h1>E-posta Doğrulama</h1>
+        <p class="sb"><b class="gold">@mail</b> adresine 6 haneli bir doğrulama kodu gönderdik. Kod @EmailService.CodeMinutes dakika geçerlidir.</p>
+        @if (ViewData["EmailConfigured"] as bool? != true)
+        {
+            <p class="note fgrp">Not: E-posta sunucusu (SMTP) henüz yapılandırılmadı; kod gerçekte gönderilemiyor. Yönetici panelden e-postanızı elle doğrulayabilir.</p>
+        }
+        <form method="post" action="/hesap/dogrula" asp-antiforgery="true" novalidate aria-label="Doğrulama kodu">
+            <div class="val-sum fgrp" asp-validation-summary="ModelOnly"></div>
+            <div class="fgrp">
+                <label class="fl2 code-in">@Icon.Lock(20)<input asp-for="Code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="••••••" aria-label="6 haneli doğrulama kodu" data-code required autofocus /></label>
+                <span class="err" asp-validation-for="Code"></span>
+            </div>
+            <button class="btn btn-grad btn-block" type="submit" style="margin-top:8px">Doğrula</button>
+        </form>
+        <form method="post" action="/hesap/dogrula/tekrar" asp-antiforgery="true" style="margin-top:14px">
+            <p class="ft" style="margin:0">Kod gelmedi mi? Spam klasörünü kontrol edin veya <button class="linkbtn" type="submit">yeni kod isteyin</button>.</p>
+        </form>
+        <p class="ft">E-posta adresiniz yanlışsa <a href="/#iletisim">bize yazın</a>, düzeltelim.</p>
+    </div>
+</div>

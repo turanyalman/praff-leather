@@ -1,0 +1,183 @@
+﻿@inject SiteSettingsService SettingsService
+@inject CartService CartService
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@inject ContentPageService Pages
+@{
+    var s = await SettingsService.GetAsync();
+    var footerPages = await Pages.FooterAsync();
+    var baseUrl = s.Has(SettingKeys.SiteUrl) ? s.Raw(SettingKeys.SiteUrl).TrimEnd('/') : $"{Context.Request.Scheme}://{Context.Request.Host}";
+    var ogImage = ViewData["OgImage"] as string ?? s[SettingKeys.HeroImage];
+    if (!ogImage.StartsWith("http")) ogImage = baseUrl + ogImage;
+    var description = ViewData["Description"] as string ?? "PRAFF LEATHER — erkek deri cüzdan, kemer ve çantada toptan tedarik.";
+    var cartCount = await CartService.CountAsync();
+    var isCustomer = User.Identity?.IsAuthenticated == true && User.Identity.AuthenticationType == AuthSchemes.Customer;
+    var nav = ViewData["Nav"] as string ?? "";
+    var title = ViewData["Title"] as string;
+    var siteTitle = s[SettingKeys.SiteTitle];
+    var wa = Fmt.WhatsAppLink(s.Raw(SettingKeys.WhatsApp), "Merhaba, PRAFF LEATHER toptan ürünleri hakkında bilgi almak istiyorum.");
+    var csrf = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    var approved = User.IsApprovedCustomer();
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@(string.IsNullOrEmpty(title) ? siteTitle : $"{title} — {siteTitle}")</title>
+    <meta name="description" content="@description" />
+    <link rel="canonical" href="@(baseUrl + Context.Request.Path)" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="@siteTitle" />
+    <meta property="og:locale" content="tr_TR" />
+    <meta property="og:title" content="@(string.IsNullOrEmpty(title) ? siteTitle : $"{title} — {siteTitle}")" />
+    <meta property="og:description" content="@description" />
+    <meta property="og:url" content="@(baseUrl + Context.Request.Path)" />
+    <meta property="og:image" content="@ogImage" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#0A0806" />
+    <meta name="csrf" content="@csrf" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/images/brand/favicon-512.png" />
+    <link rel="apple-touch-icon" href="/images/brand/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="@ViewData["BodyClass"]">
+<header class="hd">
+    <a class="br" href="/" aria-label="@siteTitle ana sayfa">
+        <img src="/images/brand/praff-monogram-champagne.png" alt="" width="36" height="44" />
+        <div><b>PRAFF</b><span>LEATHER</span></div>
+    </a>
+    <nav class="nv" aria-label="Ana menü">
+        @if (approved) { <a class="pill" href="/urunler">Müşteriler için Ürünler</a> }
+        else if (!isCustomer) { <a class="pill" href="/hesap/kayit">Toptan Müşteri Ol</a> }
+        <a class="@(nav == "home" ? "on" : null)" href="/">Ana Sayfa</a>
+        @if (approved) { <a class="@(nav == "products" ? "on" : null)" href="/urunler">Ürünler</a> }
+        else { <a href="/#kategoriler">Koleksiyon</a> }
+        <a href="/#hikaye">Marka Hikâyesi</a>
+        <a href="/#iletisim">İletişim</a>
+        @if (!string.IsNullOrEmpty(wa)) { <a class="wa-btn" href="@wa" target="_blank" rel="noopener" aria-label="WhatsApp ile yazın">@Icon.WhatsApp(18) WhatsApp</a> }
+    </nav>
+    <div class="rt">
+        @if (isCustomer)
+        {
+            <a class="ob" href="/hesap">@Icon.User(18) Hesabım</a>
+            <a class="ob opt" href="/hesap/siparisler">Siparişlerim</a>
+            <form method="post" action="/hesap/cikis" asp-antiforgery="true"><button class="ob" type="submit">Çıkış</button></form>
+        }
+        else
+        {
+            <a class="ob" href="/hesap/giris">@Icon.User(18) Giriş Yap</a>
+            <a class="ob opt" href="/hesap/kayit">Başvuru</a>
+        }
+        @if (approved) { <a class="cart-btn" href="/sepet" aria-label="Toptan sepet, @cartCount ürün">@Icon.Bag()<em data-cart-count>@cartCount</em></a> }
+        <button class="menu-btn" type="button" aria-label="Menüyü aç" aria-expanded="false" aria-controls="mnav" data-menu>@Icon.Menu()</button>
+    </div>
+</header>
+<nav class="mnav" id="mnav" aria-label="Mobil menü">
+    <a href="/">Ana Sayfa</a>
+    @if (approved) { <a href="/urunler">Ürünler</a> } else { <a href="/#kategoriler">Koleksiyon</a> }
+    <a href="/#hikaye">Marka Hikâyesi</a>
+    <a href="/#iletisim">İletişim</a>
+    @if (!string.IsNullOrEmpty(wa)) { <a href="@wa" target="_blank" rel="noopener">WhatsApp</a> }
+    @if (approved) { <a href="/sepet">Toptan Sepetim (<span data-cart-count>@cartCount</span>)</a> }
+    @if (isCustomer)
+    {
+        <a href="/hesap">Hesabım</a>
+        <a href="/hesap/siparisler">Siparişlerim</a>
+        <form method="post" action="/hesap/cikis" asp-antiforgery="true"><button type="submit">Çıkış Yap</button></form>
+    }
+    else
+    {
+        <a href="/hesap/giris">Giriş Yap</a>
+        <a href="/hesap/kayit">Toptan Müşteri Başvurusu</a>
+    }
+</nav>
+
+@if (TempData["Ok"] is string ok)
+{
+    <div class="flash" role="status"><div class="f-ok">@ok</div></div>
+}
+@if (TempData["Err"] is string err)
+{
+    <div class="flash" role="alert"><div class="f-err">@err</div></div>
+}
+
+<main id="top">
+    @RenderBody()
+</main>
+
+<footer class="ft2">
+    <div class="cw">
+        <div class="fg">
+            <div class="fb">
+                <img class="flogo" src="@s[SettingKeys.LogoUrl]" alt="@siteTitle" />
+                <p>Gerçek deri.<br />Gerçek ustalık.<br />PRAFF LEATHER.</p>
+            </div>
+            <nav aria-label="Hızlı Bağlantılar">
+                <h4>Hızlı Bağlantılar</h4>
+                <a href="/">Ana Sayfa</a>
+                @if (approved) { <a href="/urunler">Ürünler</a> } else { <a href="/hesap/kayit">Toptan Müşteri Başvurusu</a> }
+                <a href="/#kategoriler">Kategoriler</a>
+                <a href="/#hikaye">Marka Hikâyemiz</a>
+                <a href="/#iletisim">İletişim</a>
+            </nav>
+            <nav aria-label="Kurumsal ve Yasal">
+                <h4>Kurumsal ve Yasal</h4>
+                @foreach (var fp in footerPages)
+                {
+                    <a href="/sayfa/@fp.Slug">@fp.Title</a>
+                }
+            </nav>
+            <div>
+                <h4>Bizi Takip Edin</h4>
+                <div class="so">
+                    @if (s.Has(SettingKeys.InstagramUrl)) { <a href="@s.Raw(SettingKeys.InstagramUrl)" target="_blank" rel="noopener" aria-label="Instagram">@Icon.Instagram()</a> }
+                    @if (s.Has(SettingKeys.YoutubeUrl)) { <a href="@s.Raw(SettingKeys.YoutubeUrl)" target="_blank" rel="noopener" aria-label="YouTube">@Icon.Youtube()</a> }
+                    @if (s.Has(SettingKeys.LinkedinUrl)) { <a href="@s.Raw(SettingKeys.LinkedinUrl)" target="_blank" rel="noopener" aria-label="LinkedIn">@Icon.Linkedin()</a> }
+                    @if (s.Has(SettingKeys.TiktokUrl)) { <a href="@s.Raw(SettingKeys.TiktokUrl)" target="_blank" rel="noopener" aria-label="TikTok">@Icon.Tiktok()</a> }
+                    @if (!string.IsNullOrEmpty(wa)) { <a href="@wa" target="_blank" rel="noopener" aria-label="WhatsApp">@Icon.WhatsApp()</a> }
+                    @if (s.Has(SettingKeys.ContactEmail)) { <a href="mailto:@s.Raw(SettingKeys.ContactEmail)" aria-label="E-posta">@Icon.Mail()</a> }
+                </div>
+            </div>
+        </div>
+        <div class="fl">
+            <span>© @DateTime.UtcNow.Year @siteTitle. Tüm hakları saklıdır.</span>
+            <a class="up" href="#top" aria-label="Yukarı çık">@Icon.Up()</a>
+        </div>
+    </div>
+</footer>
+
+<nav class="bn" aria-label="Alt menü">
+    <a class="@(nav == "home" ? "on" : null)" href="/">@Icon.Home(22)Ana Sayfa</a>
+    @if (approved)
+    {
+        <a class="@(nav == "products" ? "on" : null)" href="/urunler">@Icon.Grid(22)Ürünler</a>
+        <a class="@(nav == "cart" ? "on" : null)" href="/sepet">@Icon.Bag(22)Sepet<em data-cart-count>@cartCount</em></a>
+    }
+    else
+    {
+        <a href="/#kategoriler">@Icon.Grid(22)Koleksiyon</a>
+    }
+    <a class="@(nav == "account" ? "on" : null)" href="/hesap">@Icon.User(22)Hesabım</a>
+    @if (!string.IsNullOrEmpty(wa)) { <a href="@wa" target="_blank" rel="noopener">@Icon.Chat(22)WhatsApp</a> }
+</nav>
+@if (!string.IsNullOrEmpty(wa))
+{
+    <a class="wa-float" href="@wa" target="_blank" rel="noopener" aria-label="WhatsApp ile yazın">@Icon.WhatsApp(26)</a>
+}
+
+@if (s.Flag(SettingKeys.CookieBanner))
+{
+    <div class="ckb" role="region" aria-label="Çerez bilgilendirmesi" hidden data-cookie-bar>
+        <span>Sitemizde çerez kullanılmaktadır. <a href="/sayfa/@ContentPageService.CookieSlug">Çerez Politikası</a></span>
+        <button class="btn btn-grad" type="button" data-cookie-ok>Tamam</button>
+    </div>
+}
+<div class="toasts" aria-live="polite" data-toasts></div>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

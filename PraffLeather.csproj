@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <!-- Test projesi ve yayın çıktıları web projesine derlenmesin / yayınlanmasın. -->
+  <ItemGroup>
+    <Compile Remove="tests/**" />
+    <Content Remove="tests/**" />
+    <None Remove="tests/**" />
+    <Compile Remove="publish/**" />
+    <Content Remove="publish/**" />
+    <None Remove="publish/**" />
+    <Content Remove="deploy/**" />
+    <None Include="deploy/**" CopyToPublishDirectory="Never" />
+    <Content Update="App_Data/**" CopyToPublishDirectory="Never" />
+    <None Update="App_Data/**" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
+  <!-- Boş yükleme ve günlük klasörleri yayın paketinde bulunsun. -->
+  <ItemGroup>
+    <!-- Yerelde yüklenen test görselleri pakete girmez; sunucudaki uploads klasörü yayında korunur. -->
+    <Content Update="wwwroot/uploads/**" CopyToPublishDirectory="Never" />
+    <Content Update="wwwroot/uploads/**/.gitkeep" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="logs/.gitkeep" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HtmlSanitizer" Version="11.0.26" />
+    <PackageReference Include="MailKit" Version="5.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.15">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.15" />
+    <PackageReference Include="QRCoder" Version="1.9.0" />
+  </ItemGroup>
+
+</Project>
+

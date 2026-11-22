@@ -1,0 +1,20 @@
+@model ResetForm
+<div class="uy">
+    <form class="cd" method="post" action="/hesap/sifre-sifirla" asp-antiforgery="true" novalidate aria-label="Yeni şifre belirle">
+        <div class="lg"><b>PRAFF</b><span>LEATHER</span></div>
+        <h1>Yeni Şifre</h1>
+        @if (ViewData["Invalid"] as bool? == true)
+        {
+            <p class="sb">Bu bağlantı geçersiz veya süresi dolmuş.</p>
+            <a class="btn btn-grad btn-block" href="/hesap/sifremi-unuttum">Yeni Bağlantı İste</a>
+        }
+        else
+        {
+            <p class="sb">Hesabınız için yeni bir şifre belirleyin.</p>
+            <input type="hidden" asp-for="Token" />
+            <div class="fgrp"><label class="fl2">@Icon.Lock(20)<input asp-for="Password" type="password" placeholder="Yeni şifre (en az 8 karakter)" aria-label="Yeni şifre" autocomplete="new-password" required /><button type="button" aria-label="Şifreyi göster" data-toggle-pass>@Icon.Eye()</button></label><span class="err" asp-validation-for="Password"></span></div>
+            <div class="fgrp"><label class="fl2">@Icon.Lock(20)<input asp-for="ConfirmPassword" type="password" placeholder="Yeni şifre tekrarı" aria-label="Yeni şifre tekrarı" autocomplete="new-password" required /></label><span class="err" asp-validation-for="ConfirmPassword"></span></div>
+            <button class="btn btn-grad btn-block" type="submit">Şifreyi Güncelle</button>
+        }
+    </form>
+</div>

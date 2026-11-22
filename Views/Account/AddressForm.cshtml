@@ -1,0 +1,28 @@
+@model AddressForm
+<div class="acc">
+    <div class="aw">
+        <partial name="_Side" />
+        <div>
+            <a class="btn-ghost" href="/hesap/adresler" style="display:inline-flex;align-items:center;gap:8px">@Icon.Back() Adreslerim</a>
+            <h1>@(Model.Id == 0 ? "Yeni Adres" : "Adresi Düzenle")</h1>
+            <p class="sub">Teslimat adresinizi eksiksiz girin.</p>
+            <form class="box" method="post" action="/hesap/adresler/kaydet" asp-antiforgery="true" novalidate style="display:grid;gap:16px;max-width:720px">
+                <input type="hidden" asp-for="Id" />
+                <div class="val-sum" asp-validation-summary="ModelOnly"></div>
+                <label class="field">Adres Başlığı<input asp-for="Title" placeholder="Örn. Mağaza, Depo" /><span class="err" asp-validation-for="Title"></span></label>
+                <div class="grid2">
+                    <label class="field">Ad Soyad<input asp-for="FullName" autocomplete="name" /><span class="err" asp-validation-for="FullName"></span></label>
+                    <label class="field">Telefon<input asp-for="Phone" type="tel" autocomplete="tel" /><span class="err" asp-validation-for="Phone"></span></label>
+                </div>
+                <div class="grid2">
+                    <label class="field">İl<input asp-for="City" autocomplete="address-level1" /><span class="err" asp-validation-for="City"></span></label>
+                    <label class="field">İlçe<input asp-for="District" autocomplete="address-level2" /><span class="err" asp-validation-for="District"></span></label>
+                </div>
+                <label class="field">Adres<textarea asp-for="AddressLine" rows="3" autocomplete="street-address"></textarea><span class="err" asp-validation-for="AddressLine"></span></label>
+                <label class="field" style="max-width:240px">Posta Kodu<input asp-for="PostalCode" inputmode="numeric" maxlength="5" autocomplete="postal-code" /><span class="err" asp-validation-for="PostalCode"></span></label>
+                <label class="ck"><input asp-for="IsDefault" type="checkbox" /> Varsayılan adresim olsun</label>
+                <div><button class="btn btn-gold" type="submit">Kaydet</button></div>
+            </form>
+        </div>
+    </div>
+</div>

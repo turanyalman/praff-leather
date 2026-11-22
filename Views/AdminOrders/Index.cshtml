@@ -1,0 +1,56 @@
+@model Paged<Order>
+@{
+    var durum = ViewData["durum"] as string;
+    string Q(int page) => $"/admin/siparisler?sayfa={page}&q={Uri.EscapeDataString(ViewData["q"] as string ?? "")}&durum={durum}&baslangic={ViewData["baslangic"]}&bitis={ViewData["bitis"]}";
+}
+<div class="tb"><div><div class="eb">Yönetim Paneli</div><h1>Siparişler</h1></div>
+    <div class="ac"><span class="mut">@Model.Total sipariş</span><a class="lb2" href="@Q(1).Replace("/admin/siparisler?sayfa=1&", "/admin/siparisler.csv?")">Excel’e Aktar (CSV)</a></div></div>
+<form class="flt" method="get" action="/admin/siparisler">
+    <label>Ara<input class="inp" type="search" name="q" value="@ViewData["q"]" placeholder="No, müşteri, e-posta, telefon" /></label>
+    <label>Durum
+        <select class="inp" name="durum">
+            <option value="">Tümü</option>
+            @foreach (var s in Enum.GetValues<OrderStatus>()) { <option value="@s" selected="@(durum == s.ToString())">@Fmt.StatusText(s)</option> }
+        </select>
+    </label>
+    <label>Başlangıç<input class="inp" type="date" name="baslangic" value="@ViewData["baslangic"]" /></label>
+    <label>Bitiş<input class="inp" type="date" name="bitis" value="@ViewData["bitis"]" /></label>
+    <button class="lb2" type="submit">Filtrele</button>
+    <a class="mut" href="/admin/siparisler" style="align-self:center;font-size:13px">Temizle</a>
+</form>
+<section class="cd">
+    @if (Model.Items.Count == 0)
+    {
+        <div class="em">Kriterlere uygun sipariş yok.</div>
+    }
+    else
+    {
+        <div class="ov"><table>
+            <thead><tr><th>No</th><th>Tarih</th><th>Müşteri</th><th class="r">Adet</th><th>Durum</th><th>Ödeme</th><th class="r">Tutar</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var o in Model.Items)
+            {
+                <tr>
+                    <td><a class="gold" href="/admin/siparisler/@o.Id">#@o.OrderNumber</a></td>
+                    <td>@Fmt.DateTimeText(o.CreatedAt)</td>
+                    <td>@o.FullName@if (!string.IsNullOrEmpty(o.CompanyName)) { <br /><small class="mut">@o.CompanyName</small> }</td>
+                    <td class="r">@Fmt.Number(o.Items.Sum(i => i.Quantity))</td>
+                    <td><span class="badge @Fmt.StatusCss(o.Status)">@Fmt.StatusText(o.Status)</span></td>
+                    <td><span class="badge @(o.PaymentStatus == PaymentStatus.Paid ? "b-ok" : o.PaymentStatus == PaymentStatus.Refunded ? "b-off" : "b-wait")">@Fmt.PaymentText(o.PaymentStatus)</span></td>
+                    <td class="r">@Fmt.Money(o.Total)</td>
+                    <td><a class="sbtn" href="/admin/siparisler/@o.Id">Detay</a></td>
+                </tr>
+            }
+            </tbody>
+        </table></div>
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="pager" aria-label="Sayfalar">
+                @for (var i = 1; i <= Model.TotalPages; i++)
+                {
+                    if (i == Model.Page) { <span class="on">@i</span> } else { <a href="@Q(i)">@i</a> }
+                }
+            </nav>
+        }
+    }
+</section>

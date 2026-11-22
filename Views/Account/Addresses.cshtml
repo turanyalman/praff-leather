@@ -1,0 +1,36 @@
+@model List<Address>
+<div class="acc">
+    <div class="aw">
+        <partial name="_Side" />
+        <div>
+            <div class="sh" style="align-items:center"><h1>Adres Bilgilerim</h1><a class="btn btn-gold" href="/hesap/adresler/yeni">+ Yeni Adres</a></div>
+            <p class="sub">Kayıtlı adresleriniz ödeme sırasında tek tıkla seçilebilir.</p>
+            @if (Model.Count == 0)
+            {
+                <div class="empty">@Icon.Pin(56)<h2>Kayıtlı adresiniz yok</h2><p>Siparişlerinizi hızlandırmak için bir teslimat adresi ekleyin.</p><a class="btn btn-gold" href="/hesap/adresler/yeni">Adres Ekle</a></div>
+            }
+            else
+            {
+                <div class="addr-grid">
+                    @foreach (var a in Model)
+                    {
+                        <div class="bx addr">
+                            <b>@a.Title @if (a.IsDefault) { <span class="badge b-gold" style="font-family:var(--sans);font-size:11px;vertical-align:middle">Varsayılan</span> }</b>
+                            <span>@a.FullName · @a.Phone</span>
+                            <span class="mut">@a.AddressLine</span>
+                            <span class="mut">@a.District / @a.City @a.PostalCode</span>
+                            <div class="acts">
+                                <a class="sbtn" href="/hesap/adresler/@a.Id">Düzenle</a>
+                                @if (!a.IsDefault)
+                                {
+                                    <form method="post" action="/hesap/adresler/@a.Id/varsayilan" asp-antiforgery="true"><button class="sbtn" type="submit">Varsayılan Yap</button></form>
+                                }
+                                <form method="post" action="/hesap/adresler/@a.Id/sil" asp-antiforgery="true" data-confirm="Bu adres silinecek. Emin misiniz?"><button class="sbtn dng" type="submit">Sil</button></form>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

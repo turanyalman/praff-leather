@@ -1,0 +1,186 @@
+@model ProductEditViewModel
+@{
+    var f = Model.Form;
+    var isNew = f.Id == 0;
+    var hasColors = f.Colors.Count > 0;
+}
+<div class="tb">
+    <div><div class="eb"><a href="/admin/urunler">Ürünler</a> ›</div><h1>@(isNew ? "Yeni Ürün" : f.Name)</h1></div>
+    @if (!isNew)
+    {
+        <div class="ac">
+            <a class="lb2" href="/admin/barkod/etiket?urun=@f.Id">Etiket Yazdır</a>
+            @if (!string.IsNullOrEmpty(f.Slug)) { <a class="lb2" href="/urun/@f.Slug" target="_blank" rel="noopener">Sitede Gör ↗</a> }
+        </div>
+    }
+</div>
+
+<form class="fm" method="post" action="/admin/urunler/kaydet" enctype="multipart/form-data" asp-antiforgery="true" novalidate data-product-edit>
+    <input type="hidden" asp-for="Form.Id" />
+    <input type="hidden" asp-for="Form.OriginalStock" />
+    <div class="val-sum" asp-validation-summary="All"></div>
+    <div class="g2">
+        <div class="fm">
+            <section class="cd fm">
+                <h2>Temel Bilgiler</h2>
+                <label>Ürün Adı *<input asp-for="Form.Name" maxlength="160" /><span class="err" asp-validation-for="Form.Name"></span></label>
+                <div class="row2">
+                    <label>Stok Kodu (SKU) *<input asp-for="Form.Sku" maxlength="40" placeholder="PRF-006" /><span class="err" asp-validation-for="Form.Sku"></span></label>
+                    <label>Adres (slug)<input asp-for="Form.Slug" maxlength="180" placeholder="Boş bırakılırsa addan üretilir" /><span class="err" asp-validation-for="Form.Slug"></span></label>
+                </div>
+                <div class="row2">
+                    <label>Kategori *
+                        <select asp-for="Form.CategoryId">
+                            @foreach (var c in Model.Categories) { <option value="@c.Id">@c.Name@(c.IsActive ? "" : " (pasif)")</option> }
+                        </select>
+                        <span class="err" asp-validation-for="Form.CategoryId"></span>
+                    </label>
+                    <label>Alt Başlık<input asp-for="Form.Subtitle" maxlength="80" placeholder="Örn. Deri Kemer" /></label>
+                </div>
+                <label>Kısa Açıklama<textarea asp-for="Form.ShortDescription" rows="2" maxlength="500"></textarea><span class="hint">Ürün sayfasında fiyatın üstünde görünür.</span></label>
+                <label>Ürün Açıklaması<textarea asp-for="Form.Description" rows="6"></textarea><span class="hint">“Ürün Açıklaması” sekmesi. Her satır ayrı paragraf olur.</span></label>
+                <label>Ürün Özellikleri<textarea asp-for="Form.Features" rows="5"></textarea><span class="hint">“Ürün Özellikleri” sekmesi. Her satır bir madde.</span></label>
+                <label>Ürün Detayları<textarea asp-for="Form.Details" rows="5" placeholder="Malzeme: Dana derisi&#10;Ölçü: 26 × 18 × 7 cm"></textarea><span class="hint">“Ürün Detayları” sekmesi. Her satır “Etiket: Değer”.</span></label>
+            </section>
+
+            <section class="cd fm" id="renkler">
+                <h2>Renkler, Stok ve Barkod</h2>
+                <p class="mut" style="margin:0;font-size:13px">Renkli ürünlerde stok ve barkod her renk için ayrı tutulur. Renk yoksa satır eklemeyin; stok aşağıdaki “Stok Miktarı” alanından girilir.</p>
+                <div class="vrows" data-colors>
+                    <div class="vhead" aria-hidden="true"><span>Renk adı</span><span>Renk</span><span>Stok</span><span>Barkod</span><span></span></div>
+                    @for (var i = 0; i < f.Colors.Count; i++)
+                    {
+                        var c = f.Colors[i];
+                        <div class="cr vr">
+                            <input type="hidden" name="Form.Colors[@i].Id" value="@c.Id" data-f="Id" />
+                            <input type="hidden" name="Form.Colors[@i].OriginalStock" value="@c.OriginalStock" data-f="OriginalStock" />
+                            <input name="Form.Colors[@i].Name" value="@c.Name" placeholder="Renk adı (örn. Kahverengi)" maxlength="40" aria-label="Renk adı" data-f="Name" />
+                            <input type="color" name="Form.Colors[@i].Hex" value="@(c.Hex ?? "#4A2F1D")" aria-label="Renk kodu" data-f="Hex" />
+                            <input type="number" name="Form.Colors[@i].Stock" value="@c.Stock" min="0" aria-label="Renk stoğu" data-f="Stock" />
+                            <div class="bcin"><input name="Form.Colors[@i].Barcode" value="@c.Barcode" maxlength="48" placeholder="Okutun veya oluşturun" aria-label="Renk barkodu" data-f="Barcode" data-barcode-input /><button class="sbtn" type="button" data-gen-barcode title="Barkod oluştur">Oluştur</button></div>
+                            <button class="sbtn dl" type="button" aria-label="Rengi kaldır" data-remove-color>×</button>
+                        </div>
+                    }
+                </div>
+                <button class="lb2" type="button" data-add-color>+ Renk Ekle</button>
+                <span class="hint">Renk silinirse o rengin stoğu “Düzeltme” hareketiyle düşülür. Müşteri renkli ürünlerde renk seçmek zorundadır.</span>
+                <span class="err" asp-validation-for="Form.Colors"></span>
+            </section>
+
+            <section class="cd fm" id="gorseller">
+                <h2>Görseller</h2>
+                @if (Model.Images.Count == 0)
+                {
+                    <p class="mut" style="margin:0">Henüz görsel yok. Görsel eklenene kadar sitede “Fotoğraf eklenecek” kutusu görünür.</p>
+                }
+                else
+                {
+                    <div class="imgs">
+                        @for (var i = 0; i < Model.Images.Count; i++)
+                        {
+                            var img = Model.Images[i];
+                            <div class="it @(i == 0 ? "main" : null)">
+                                <img src="@img.Url" alt="" />
+                                <div class="ac">
+                                    <button class="sbtn" type="submit" form="mv-@img.Id-sol" aria-label="Sola taşı" disabled="@(i == 0)">‹</button>
+                                    <button class="sbtn" type="submit" form="mv-@img.Id-sag" aria-label="Sağa taşı" disabled="@(i == Model.Images.Count - 1)">›</button>
+                                    @if (i > 0) { <button class="sbtn" type="submit" form="mv-@img.Id-ana">Ana</button> }
+                                    <button class="sbtn dl" type="submit" form="del-@img.Id" aria-label="Görseli sil">Sil</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                <label>Yeni Görsel Yükle<input asp-for="Form.NewImages" type="file" accept="image/jpeg,image/png,image/webp" multiple /><span class="hint">JPG, PNG veya WEBP · en fazla 5 MB · birden fazla seçebilirsiniz. Kaydet’e bastığınızda yüklenir.</span><span class="err" asp-validation-for="Form.NewImages"></span></label>
+            </section>
+
+            @if (!isNew)
+            {
+                <section class="cd">
+                    <div class="hrow"><h2>Stok Hareketleri</h2><a class="gold" href="/admin/stok/hareketler?urun=@f.Id">Tümü →</a></div>
+                    @if (Model.Movements.Count == 0) { <p class="mut" style="margin:0">Henüz hareket yok.</p> }
+                    else
+                    {
+                        <div class="ov"><table>
+                            <thead><tr><th>Tarih</th><th>İşlem</th><th>Renk</th><th class="r">Adet</th><th class="r">Önce → Sonra</th><th>Kim</th></tr></thead>
+                            <tbody>
+                            @foreach (var m in Model.Movements)
+                            {
+                                <tr>
+                                    <td>@Fmt.DateTimeText(m.CreatedAt)</td>
+                                    <td><span class="badge @Fmt.MovementCss(m.Type)">@Fmt.MovementText(m.Type)</span></td>
+                                    <td>@(m.VariantName ?? "—")</td>
+                                    <td class="r">@(m.Quantity > 0 ? "+" : "")@Fmt.Number(m.Quantity)</td>
+                                    <td class="r">@Fmt.Number(m.StockBefore) → @Fmt.Number(m.StockAfter)</td>
+                                    <td class="mut">@m.CreatedBy</td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table></div>
+                    }
+                </section>
+            }
+        </div>
+
+        <div class="fm">
+            <section class="cd fm">
+                <h2>Toptan Satış</h2>
+                <label>Toptan Birim Fiyat (₺) *<input asp-for="Form.Price" type="text" inputmode="decimal" placeholder="Örn. 350 veya 1250,50" maxlength="15" /><span class="err" asp-validation-for="Form.Price"></span></label>
+                <div class="row2">
+                    <label>Minimum Sipariş *<input asp-for="Form.MinOrderQuantity" type="number" min="1" /><span class="err" asp-validation-for="Form.MinOrderQuantity"></span></label>
+                    <label>Koli İçi Adet<input asp-for="Form.PackSize" type="number" min="1" /><span class="err" asp-validation-for="Form.PackSize"></span></label>
+                </div>
+                <div class="row2">
+                    <label>Stok Miktarı<input asp-for="Form.StockQuantity" type="number" min="0" readonly="@hasColors" data-total-stock /><span class="err" asp-validation-for="Form.StockQuantity"></span>
+                        <span class="hint" data-total-hint>@(hasColors ? "Renklerin toplamı (renk satırlarından düzenleyin)." : isNew ? "Başlangıç stoğu." : "Değişiklik stok hareketi olarak kaydedilir.")</span>
+                    </label>
+                    <label>Kritik Stok Seviyesi<input asp-for="Form.CriticalStockLevel" type="number" min="0" /><span class="hint">Altına düşünce panoda uyarı verir.</span><span class="err" asp-validation-for="Form.CriticalStockLevel"></span></label>
+                </div>
+                @if (!isNew) { <label>Stok Değişiklik Notu<input asp-for="Form.StockReason" maxlength="300" placeholder="Örn. Sayım farkı" /></label> }
+            </section>
+
+            <section class="cd fm" id="barkod">
+                <h2>Barkod ve QR</h2>
+                <label>Ürün Barkodu
+                    <div class="bcin"><input asp-for="Form.Barcode" maxlength="48" placeholder="Okuyucuyla okutun, yazın veya oluşturun" autocomplete="off" data-barcode-input data-main-barcode /><button class="sbtn" type="button" data-gen-barcode>Barkod Oluştur</button></div>
+                    <span class="hint">Üründe üretici barkodu varsa okutmanız yeterli. Renkli ürünlerde her rengin barkodu ayrıca verilebilir.</span>
+                    <span class="err" asp-validation-for="Form.Barcode"></span>
+                </label>
+                @if (!isNew)
+                {
+                    <div class="bcprev">
+                        @if (!string.IsNullOrEmpty(f.Barcode))
+                        {
+                            <figure><img src="/admin/barcode/@(f.Id).svg?v=@Uri.EscapeDataString(f.Barcode)" alt="Barkod: @f.Barcode" /><figcaption>Barkod</figcaption></figure>
+                        }
+                        <figure class="qr"><img src="/admin/qr/@(f.Id).svg" alt="Ürün sayfası QR kodu" /><figcaption>QR · ürün sayfası</figcaption></figure>
+                    </div>
+                    @if (Model.ProductUrl != null) { <p class="hint" style="margin:0;overflow-wrap:anywhere">QR içeriği: @Model.ProductUrl</p> }
+                    <a class="lb2" href="/admin/barkod/etiket?urun=@f.Id">Etiket Yazdır</a>
+                }
+                else
+                {
+                    <p class="mut" style="margin:0;font-size:13px">Önizleme ve etiket yazdırma ürün kaydedildikten sonra açılır.</p>
+                }
+            </section>
+
+            <section class="cd fm">
+                <h2>Yayın</h2>
+                <label class="ck"><input asp-for="Form.IsActive" type="checkbox" /> Sitede göster (aktif)</label>
+                <label class="ck"><input asp-for="Form.IsFeatured" type="checkbox" /> Ana sayfada öne çıkar</label>
+                <label>Rozet<input asp-for="Form.Badge" maxlength="30" placeholder="Örn. Yeni, Çok Satan" /></label>
+                @if (!isNew && Model.OrderCount > 0) { <p class="mut" style="margin:0;font-size:13px">Bu ürün @Model.OrderCount siparişte yer alıyor.</p> }
+            </section>
+
+            <button class="gb" type="submit">@(isNew ? "Ürünü Oluştur" : "Değişiklikleri Kaydet")</button>
+        </div>
+    </div>
+</form>
+
+@foreach (var img in Model.Images)
+{
+    <form id="del-@img.Id" method="post" action="/admin/urunler/@f.Id/gorsel/@img.Id/sil" asp-antiforgery="true" data-confirm="Görsel silinsin mi?" hidden></form>
+    <form id="mv-@img.Id-sol" method="post" action="/admin/urunler/@f.Id/gorsel/@img.Id/tasi?dir=sol" asp-antiforgery="true" hidden></form>
+    <form id="mv-@img.Id-sag" method="post" action="/admin/urunler/@f.Id/gorsel/@img.Id/tasi?dir=sag" asp-antiforgery="true" hidden></form>
+    <form id="mv-@img.Id-ana" method="post" action="/admin/urunler/@f.Id/gorsel/@img.Id/tasi?dir=ana" asp-antiforgery="true" hidden></form>
+}

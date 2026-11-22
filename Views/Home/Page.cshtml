@@ -1,0 +1,21 @@
+@model ContentPage
+@inject ContentPageService Pages
+@{
+    var links = await Pages.FooterAsync();
+}
+<div class="ys">
+    <div class="cpg">
+        <nav class="cpn" aria-label="Bilgi sayfaları">
+            @foreach (var l in links)
+            {
+                <a class="@(l.Slug == Model.Slug ? "on" : null)" href="/sayfa/@l.Slug">@l.Title</a>
+            }
+        </nav>
+        <article class="lp cpc">
+            <h1>@Model.Title</h1>
+            @* Kayıtta temizlenir; ek güvenlik için gösterimde de temizlenir. *@
+            <div class="rich">@Html.Raw(ContentPageService.Sanitize(Model.Content))</div>
+            <p class="upd">Son güncelleme: @Fmt.Date(Model.UpdatedAt)</p>
+        </article>
+    </div>
+</div>

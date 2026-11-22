@@ -1,0 +1,69 @@
+@model SettingsForm
+@{
+    string V(string k) => Model.Values.GetValueOrDefault(k) ?? "";
+    string N(string k) => $"Values[{k}]";
+}
+<div class="tb"><div><div class="eb">Yönetim Paneli</div><h1>Site Ayarları</h1></div></div>
+<form class="fm" method="post" action="/admin/ayarlar" enctype="multipart/form-data" asp-antiforgery="true" novalidate>
+    <div class="val-sum" asp-validation-summary="All"></div>
+    <div class="g2e">
+        <section class="cd fm">
+            <h2>Genel</h2>
+            <label>Site Başlığı<input name="@N(SettingKeys.SiteTitle)" value="@V(SettingKeys.SiteTitle)" maxlength="80" /></label>
+            <label>Site Adresi<input name="@N(SettingKeys.SiteUrl)" value="@V(SettingKeys.SiteUrl)" placeholder="https://www.praffleather.com" inputmode="url" /><span class="hint">QR kodlar, e-postadaki bağlantılar, site haritası ve paylaşım önizlemeleri bu adresi kullanır. Yayına alınca mutlaka doldurun.</span></label>
+            <div style="display:flex;gap:16px;align-items:center">
+                <img src="@(string.IsNullOrEmpty(V(SettingKeys.LogoUrl)) ? SettingKeys.Defaults[SettingKeys.LogoUrl] : V(SettingKeys.LogoUrl))" alt="Mevcut logo" style="width:110px;background:#000;padding:8px" />
+                <label style="flex:1">Logo (alt bilgi)<input type="file" name="LogoFile" accept="image/png,image/jpeg,image/webp" /><span class="hint">Şeffaf PNG önerilir · en fazla 5 MB.</span></label>
+            </div>
+            <label>Mağazada “Son X adet” Eşiği<input name="@N(SettingKeys.LowStockThreshold)" value="@V(SettingKeys.LowStockThreshold)" inputmode="numeric" /><span class="hint">Ürün sayfasında stok bu adet ve altındaysa “Son X adet” yazar. Panodaki kritik stok uyarısı ürün bazında “Kritik Stok Seviyesi” ile ayarlanır.</span></label>
+            <label class="ck"><input type="checkbox" name="@N(SettingKeys.CookieBanner)" value="1" checked="@(V(SettingKeys.CookieBanner) != "0")" /> Çerez bilgilendirme şeridini göster</label>
+            <a class="gold" href="/admin/sayfalar" style="font-size:14px">Sayfalar ve Yasal Metinler (KVKK, Hakkımızda…) →</a>
+            <a class="gold" href="/admin/barkod" style="font-size:14px">Barkod &amp; QR ayarları →</a>
+        </section>
+        <section class="cd fm">
+            <h2>E-posta ve Üyelik</h2>
+            <label>Bildirim E-postası<input name="@N(SettingKeys.AdminNotifyEmail)" value="@V(SettingKeys.AdminNotifyEmail)" type="email" placeholder="Boşsa iletişim e-postası kullanılır" /><span class="hint">Yeni başvuru, yeni sipariş ve müşteri iptali bildirimleri bu adrese gelir.</span></label>
+            <label class="ck"><input type="checkbox" name="@N(SettingKeys.RequireEmailVerification)" value="1" checked="@(V(SettingKeys.RequireEmailVerification) != "0")" /> Kayıtta e-posta doğrulama kodu zorunlu</label>
+            <span class="hint">Açıkken yeni müşteri, e-postasına gelen 6 haneli kodu girmeden hesabını kullanamaz. SMTP ayarlanmadıysa kapatabilir veya müşteriyi panelden elle doğrulayabilirsiniz.</span>
+            <a class="gold" href="/admin/eposta" style="font-size:14px">E-posta gönder / SMTP testi →</a>
+        </section>
+        <section class="cd fm">
+            <h2>Ana Sayfa (Hero)</h2>
+            <label>Üst Etiket<input name="@N(SettingKeys.HeroEyebrow)" value="@V(SettingKeys.HeroEyebrow)" maxlength="100" /></label>
+            <label>Başlık<input name="@N(SettingKeys.HeroTitle)" value="@V(SettingKeys.HeroTitle)" maxlength="100" /></label>
+            <label>Alt Metin<textarea name="@N(SettingKeys.HeroSubtitle)" rows="2" maxlength="300">@V(SettingKeys.HeroSubtitle)</textarea></label>
+            <div style="display:flex;gap:16px;align-items:center">
+                <img src="@(string.IsNullOrEmpty(V(SettingKeys.HeroImage)) ? SettingKeys.Defaults[SettingKeys.HeroImage] : V(SettingKeys.HeroImage))" alt="Mevcut ana görsel" style="width:140px;height:80px;object-fit:cover" />
+                <label style="flex:1">Ana Görsel<input type="file" name="HeroFile" accept="image/jpeg,image/png,image/webp" /><span class="hint">Yatay, en az 1600 px genişlik önerilir.</span></label>
+            </div>
+            <button class="sbtn" type="submit" form="hero-reset" style="justify-self:start">Varsayılan görsele dön</button>
+        </section>
+        <section class="cd fm">
+            <h2>İletişim</h2>
+            <label>E-posta<input name="@N(SettingKeys.ContactEmail)" value="@V(SettingKeys.ContactEmail)" type="email" /></label>
+            <label>Telefon<input name="@N(SettingKeys.Phone)" value="@V(SettingKeys.Phone)" type="tel" /></label>
+            <label>WhatsApp Numarası<input name="@N(SettingKeys.WhatsApp)" value="@V(SettingKeys.WhatsApp)" placeholder="905xxxxxxxxx" /><span class="hint">Ülke koduyla, yalnızca rakam. Boşsa WhatsApp düğmeleri gizlenir.</span></label>
+            <label>Adres<textarea name="@N(SettingKeys.Address)" rows="2" maxlength="300">@V(SettingKeys.Address)</textarea></label>
+            <label>Çalışma Saatleri<input name="@N(SettingKeys.WorkingHours)" value="@V(SettingKeys.WorkingHours)" maxlength="100" /></label>
+        </section>
+        <section class="cd fm">
+            <h2>Sosyal Medya</h2>
+            <label>Instagram Adresi<input name="@N(SettingKeys.InstagramUrl)" value="@V(SettingKeys.InstagramUrl)" placeholder="https://instagram.com/..." /></label>
+            <label>Instagram Kullanıcı Adı<input name="@N(SettingKeys.InstagramHandle)" value="@V(SettingKeys.InstagramHandle)" placeholder="@@praffleather" /></label>
+            <label>YouTube<input name="@N(SettingKeys.YoutubeUrl)" value="@V(SettingKeys.YoutubeUrl)" placeholder="https://..." /></label>
+            <label>LinkedIn<input name="@N(SettingKeys.LinkedinUrl)" value="@V(SettingKeys.LinkedinUrl)" placeholder="https://..." /></label>
+            <label>TikTok<input name="@N(SettingKeys.TiktokUrl)" value="@V(SettingKeys.TiktokUrl)" placeholder="https://..." /></label>
+            <span class="hint">Boş bırakılan hesaplar sitede gösterilmez.</span>
+        </section>
+        <section class="cd fm">
+            <h2>Sipariş ve Ödeme</h2>
+            <div class="row2">
+                <label>Kargo Ücreti (₺)<input name="@N(SettingKeys.ShippingCost)" value="@V(SettingKeys.ShippingCost)" inputmode="decimal" /><span class="hint">0 = ücretsiz</span></label>
+                <label>Ücretsiz Kargo Eşiği (₺)<input name="@N(SettingKeys.FreeShippingThreshold)" value="@V(SettingKeys.FreeShippingThreshold)" inputmode="decimal" /><span class="hint">0 = eşik yok</span></label>
+            </div>
+            <label>Havale / EFT Bilgileri<textarea name="@N(SettingKeys.BankInfo)" rows="4" maxlength="1000" placeholder="Banka: ...&#10;Alıcı: ...&#10;IBAN: TR..">@V(SettingKeys.BankInfo)</textarea><span class="hint">Ödeme sayfasında ve sipariş onayında müşteriye gösterilir.</span></label>
+        </section>
+    </div>
+    <div><button class="gb" type="submit">Ayarları Kaydet</button></div>
+</form>
+<form id="hero-reset" method="post" action="/admin/ayarlar/hero-sifirla" asp-antiforgery="true" data-confirm="Ana sayfa görseli varsayılana dönsün mü?" hidden></form>

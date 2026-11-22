@@ -1,0 +1,53 @@
+@model List<Note>
+@{
+    var f = (NoteForm)ViewData["Form"]!;
+    var all = ViewData["goster"] as string == "tumu";
+    var done = ViewData["DoneCount"] as int? ?? 0;
+    var names = new Dictionary<string, string> { ["gold"] = "Altın", ["green"] = "Yeşil", ["red"] = "Kırmızı", ["blue"] = "Mavi", ["gray"] = "Gri" };
+}
+<div class="tb"><div><div class="eb">Yönetim Paneli</div><h1>Notlar</h1></div>
+    <a class="lb2" href="@(all ? "/admin/notlar" : "/admin/notlar?goster=tumu")">@(all ? "Tamamlananları gizle" : $"Tamamlananları göster ({done})")</a></div>
+
+<div class="g2">
+    <section>
+        @if (Model.Count == 0)
+        {
+            <div class="cd em">Henüz not yok. Sağdaki formdan ilk notunuzu ekleyin.</div>
+        }
+        <div class="notes">
+            @foreach (var n in Model)
+            {
+                <article class="nt n-@n.Color @(n.IsDone ? "done" : null)" id="not-@n.Id">
+                    @if (n.IsPinned) { <span class="pin badge b-gold">Sabit</span> }
+                    @if (!string.IsNullOrEmpty(n.Title)) { <h3>@n.Title</h3> }
+                    <p class="nc">@n.Content</p>
+                    <div class="meta">@Fmt.DateTimeText(n.UpdatedAt) · @n.CreatedBy</div>
+                    <div class="ac">
+                        <a class="sbtn" href="/admin/notlar?duzenle=@n.Id">Düzenle</a>
+                        <form method="post" action="/admin/notlar/@n.Id/sabitle" asp-antiforgery="true"><button class="sbtn" type="submit">@(n.IsPinned ? "Sabitlemeyi kaldır" : "Sabitle")</button></form>
+                        <form method="post" action="/admin/notlar/@n.Id/tamam" asp-antiforgery="true"><button class="sbtn @(n.IsDone ? null : "ok")" type="submit">@(n.IsDone ? "Geri al" : "Tamamlandı")</button></form>
+                        <form method="post" action="/admin/notlar/@n.Id/sil" asp-antiforgery="true" data-confirm="Not silinsin mi?"><button class="sbtn dl" type="submit">Sil</button></form>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+    <section class="cd">
+        <h2>@(f.Id == 0 ? "Yeni Not" : "Notu Düzenle")</h2>
+        <form class="fm" method="post" action="/admin/notlar/kaydet" asp-antiforgery="true">
+            <input type="hidden" name="Id" value="@f.Id" />
+            <label>Başlık<input name="Title" value="@f.Title" maxlength="160" placeholder="İsteğe bağlı" /></label>
+            <label>Not *<textarea name="Content" rows="7" maxlength="4000" required placeholder="Örn. Pazartesi deri tedarikçisini ara, Nomad için 200 adet sipariş geç.">@f.Content</textarea></label>
+            <div class="lab">Renk
+                <div class="cpick">
+                    @foreach (var c in NoteForm.Colors)
+                    {
+                        <label title="@names[c]"><input type="radio" name="Color" value="@c" checked="@(f.Color == c)" aria-label="@names[c]" /><span class="c-@c"></span></label>
+                    }
+                </div>
+            </div>
+            <label class="ck"><input type="checkbox" name="IsPinned" value="true" checked="@f.IsPinned" /> Sabitle (Dashboard’da görünür)</label>
+            <div class="ac"><button class="gb" type="submit">@(f.Id == 0 ? "Not Ekle" : "Kaydet")</button>@if (f.Id != 0) { <a class="mut" href="/admin/notlar">Vazgeç</a> }</div>
+        </form>
+    </section>
+</div>

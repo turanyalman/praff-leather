@@ -1,0 +1,57 @@
+@model List<Product>
+@{
+    var cats = ViewData["Categories"] as List<Category> ?? new();
+    var kat = ViewData["kategori"] as int?;
+    var durum = ViewData["durum"] as string;
+}
+<div class="tb"><div><div class="eb">Yönetim Paneli</div><h1>Ürünler</h1></div><a class="gb" href="/admin/urunler/yeni">+ Yeni Ürün</a></div>
+
+<form class="flt" method="get" action="/admin/urunler">
+    <label>Ara<input class="inp" type="search" name="q" value="@ViewData["q"]" placeholder="Ad veya ürün kodu" /></label>
+    <label>Kategori
+        <select class="inp" name="kategori">
+            <option value="">Tümü</option>
+            @foreach (var c in cats) { <option value="@c.Id" selected="@(kat == c.Id)">@c.Name</option> }
+        </select>
+    </label>
+    <label>Durum
+        <select class="inp" name="durum">
+            <option value="">Tümü</option>
+            <option value="aktif" selected="@(durum == "aktif")">Aktif</option>
+            <option value="pasif" selected="@(durum == "pasif")">Pasif</option>
+        </select>
+    </label>
+    <button class="lb2" type="submit">Filtrele</button>
+</form>
+
+<section class="cd">
+    @if (Model.Count == 0)
+    {
+        <div class="em">Ürün bulunamadı. <a class="gold" href="/admin/urunler/yeni">Yeni ürün ekleyin →</a></div>
+    }
+    else
+    {
+        <div class="ov"><table>
+            <thead><tr><th>Görsel</th><th>Ürün</th><th>Kategori</th><th class="r">Fiyat</th><th class="r">Stok</th><th class="r">Min.</th><th>Durum</th><th>İşlem</th></tr></thead>
+            <tbody>
+            @foreach (var p in Model)
+            {
+                <tr class="@(p.IsActive ? null : "off")">
+                    <td>@if (p.MainImageUrl != null) { <img src="@p.MainImageUrl" alt="" /> } else { <div class="ph"><img src="/images/brand/praff-monogram-champagne.png" alt="" /></div> }</td>
+                    <td><a class="gold" href="/admin/urunler/@p.Id">@p.Name</a><br /><small class="mut">@p.Sku@(p.IsFeatured ? " · Öne çıkan" : "")</small></td>
+                    <td>@p.Category?.Name</td>
+                    <td class="r">@Fmt.Money(p.Price)</td>
+                    <td class="r"><span class="badge @(p.StockQuantity == 0 ? "b-err" : p.StockQuantity < p.MinOrderQuantity ? "b-wait" : "b-ok")">@Fmt.Number(p.StockQuantity)</span></td>
+                    <td class="r">@p.MinOrderQuantity</td>
+                    <td>@(p.IsActive ? "Aktif" : "Pasif")</td>
+                    <td class="ac">
+                        <a class="sbtn" href="/admin/urunler/@p.Id">Düzenle</a>
+                        <form method="post" action="/admin/urunler/@p.Id/durum" asp-antiforgery="true"><button class="sbtn" type="submit">@(p.IsActive ? "Pasife Al" : "Yayına Al")</button></form>
+                        <form method="post" action="/admin/urunler/@p.Id/sil" asp-antiforgery="true" data-confirm="“@p.Name” kalıcı olarak silinecek. Geçmiş siparişlerdeki kayıtlar korunur. Silmek yerine pasife almayı da seçebilirsiniz. Devam edilsin mi?"><button class="sbtn dl" type="submit">Sil</button></form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table></div>
+    }
+</section>

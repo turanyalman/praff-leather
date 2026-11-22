@@ -1,0 +1,20 @@
+@model List<ContactMessage>
+<div class="tb"><div><div class="eb">Yönetim Paneli</div><h1>İletişim Mesajları</h1></div><span class="mut">@Model.Count(m => !m.IsRead) okunmamış</span></div>
+<section class="cd">
+    @if (Model.Count == 0)
+    {
+        <div class="em">Henüz mesaj yok. Ana sayfadaki iletişim formundan gelen mesajlar burada görünür.</div>
+    }
+    @foreach (var m in Model)
+    {
+        <div class="msg @(m.IsRead ? null : "unread")">
+            <b class="t">@m.Subject</b> <small class="mut">· @Fmt.DateTimeText(m.CreatedAt)</small><br />
+            <span>@m.FullName · <a class="gold" href="mailto:@m.Email?subject=@Uri.EscapeDataString("Re: " + m.Subject)">@m.Email</a>@if (!string.IsNullOrEmpty(m.Phone)) { <text> · @m.Phone</text> }</span>
+            <p>@m.Message</p>
+            <div class="ac">
+                <form method="post" action="/admin/mesajlar/@m.Id/okundu" asp-antiforgery="true"><button class="sbtn" type="submit">@(m.IsRead ? "Okunmadı işaretle" : "Okundu işaretle")</button></form>
+                <form method="post" action="/admin/mesajlar/@m.Id/sil" asp-antiforgery="true" data-confirm="Mesaj kalıcı olarak silinsin mi?"><button class="sbtn dl" type="submit">Sil</button></form>
+            </div>
+        </div>
+    }
+</section>

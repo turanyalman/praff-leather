@@ -1,0 +1,70 @@
+﻿@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@inject PraffLeather.Data.AppDbContext Db
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    var nav = ViewData["Nav"] as string ?? "";
+    var bare = ViewData["Bare"] as bool? == true;
+    var title = ViewData["Title"] as string ?? "Yönetim";
+    var unread = bare ? 0 : await Db.ContactMessages.CountAsync(m => !m.IsRead);
+    var pending = bare ? 0 : await Db.Orders.CountAsync(o => o.Status == OrderStatus.Pending);
+    var approvals = bare ? 0 : await Db.Users.CountAsync(u => !u.IsApproved && u.IsActive);
+    var critical = bare ? 0 : await Db.Products.CountAsync(p => !p.Colors.Any() && p.StockQuantity <= p.CriticalStockLevel)
+                              + await Db.ProductColors.CountAsync(c => c.StockQuantity <= c.Product!.CriticalStockLevel);
+    var csrf = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="csrf" content="@csrf" />
+    <title>@title — PRAFF Yönetim</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Newsreader:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body>
+@if (bare)
+{
+    @RenderBody()
+}
+else
+{
+    <div class="ad">
+        <aside class="sb" aria-label="Yönetim menüsü">
+            <div class="bl"><img src="/images/brand/praff-monogram-champagne.png" alt="" /><div><b>PRAFF</b><span>YÖNETİM</span></div></div>
+            <a class="@(nav == "dash" ? "on" : null)" href="/admin">Dashboard</a>
+            <form class="sq" method="get" action="/admin/urunler" role="search"><input name="q" type="search" placeholder="Ürün ara / barkod okut" aria-label="Ürün ara veya barkod okut" autocomplete="off" /></form>
+            <a class="@(nav == "products" ? "on" : null)" href="/admin/urunler">Ürünler</a>
+            <a class="@(nav == "categories" ? "on" : null)" href="/admin/kategoriler">Kategoriler</a>
+            <a class="@(nav == "stock" ? "on" : null)" href="/admin/stok">Stok @if (critical > 0) { <span class="cnt" title="Kritik stok">@critical</span> }</a>
+            <a class="@(nav == "scan" ? "on" : null)" href="/admin/barkod-stok">Barkodla Stok</a>
+            <a class="@(nav == "barcode" ? "on" : null)" href="/admin/barkod">Barkod &amp; QR</a>
+            <a class="@(nav == "orders" ? "on" : null)" href="/admin/siparisler">Siparişler @if (pending > 0) { <span class="cnt">@pending</span> }</a>
+            <a class="@(nav == "customers" ? "on" : null)" href="/admin/musteriler">Müşteriler @if (approvals > 0) { <span class="cnt" title="Onay bekleyen">@approvals</span> }</a>
+            <a class="@(nav == "notes" ? "on" : null)" href="/admin/notlar">Notlar</a>
+            <a class="@(nav == "messages" ? "on" : null)" href="/admin/mesajlar">Mesajlar @if (unread > 0) { <span class="cnt">@unread</span> }</a>
+            <a class="@(nav == "email" ? "on" : null)" href="/admin/eposta">E-posta</a>
+            <a class="@(nav == "pages" ? "on" : null)" href="/admin/sayfalar">Sayfalar ve Yasal Metinler</a>
+            <a class="@(nav == "settings" ? "on" : null)" href="/admin/ayarlar">Site Ayarları</a>
+            <a class="@(nav == "admins" ? "on" : null)" href="/admin/yoneticiler">Yöneticiler</a>
+            <a class="@(nav == "account" ? "on" : null)" href="/admin/hesap">Hesabım</a>
+            <div class="sep"></div>
+            <a href="/" target="_blank" rel="noopener">Siteyi Görüntüle ↗</a>
+            <form method="post" action="/admin/cikis" asp-antiforgery="true"><button type="submit">Çıkış</button></form>
+            <div class="who"><b>@User.FindFirstValue(ClaimTypes.Name)</b>@User.FindFirstValue(ClaimTypes.Email)</div>
+        </aside>
+        <main class="mn">
+            @if (TempData["Ok"] is string ok) { <div class="flash f-ok" role="status">@ok</div> }
+            @if (TempData["Err"] is string err) { <div class="flash f-err" role="alert">@err</div> }
+            @RenderBody()
+        </main>
+    </div>
+}
+<script src="~/js/admin.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

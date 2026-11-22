@@ -1,0 +1,26 @@
+@model ProfileForm
+<div class="acc">
+    <div class="aw">
+        <partial name="_Side" />
+        <div>
+            <h1>Hesap Bilgilerim</h1>
+            <p class="sub">İletişim ve firma bilgilerinizi güncelleyin.</p>
+            <form class="box" method="post" action="/hesap/bilgiler" asp-antiforgery="true" novalidate style="display:grid;gap:16px;max-width:720px">
+                <div class="val-sum" asp-validation-summary="ModelOnly"></div>
+                <div class="grid2">
+                    <label class="field">Ad<input asp-for="FirstName" autocomplete="given-name" /><span class="err" asp-validation-for="FirstName"></span></label>
+                    <label class="field">Soyad<input asp-for="LastName" autocomplete="family-name" /><span class="err" asp-validation-for="LastName"></span></label>
+                </div>
+                <label class="field">E-posta<input value="@Model.Email" disabled /><span class="hint">E-posta adresi değiştirilemez. Değişiklik için bizimle iletişime geçin.</span></label>
+                <label class="field">Telefon<input asp-for="Phone" type="tel" autocomplete="tel" /><span class="err" asp-validation-for="Phone"></span></label>
+                <label class="field">Firma Ünvanı<input asp-for="CompanyName" autocomplete="organization" /></label>
+                <div class="grid2">
+                    <label class="field">Vergi Dairesi<input asp-for="TaxOffice" /></label>
+                    <label class="field">Vergi Numarası<input asp-for="TaxNumber" /></label>
+                </div>
+                <label class="field">İl<input asp-for="City" autocomplete="address-level1" /></label>
+                <div><button class="btn btn-gold" type="submit">Kaydet</button></div>
+            </form>
+        </div>
+    </div>
+</div>
